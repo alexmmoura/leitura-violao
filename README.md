@@ -93,7 +93,10 @@ O projeto já traz `.github/workflows/publicar.yml`. Depois de colocado num repo
 - se passar, o app é publicado sozinho no **GitHub Pages** (endereço https gratuito, `https://USUARIO.github.io/REPOSITORIO/`),
   que é o endereço para instalar no celular Android (Chrome → ⋮ → Instalar app), com microfone e uso offline.
 
-Passos (uma vez): instalar o Git; criar um repositório no GitHub; na pasta do projeto, `git init`, `git add .`,
+**Jeito fácil**: dois cliques em `Salvar-e-publicar.cmd` — roda os testes, monta o app, registra a versão e envia
+(na primeira vez pede o endereço do repositório e o login do GitHub abre no navegador).
+
+Passos manuais equivalentes (uma vez): instalar o Git (já instalado neste PC); criar um repositório no GitHub; na pasta do projeto, `git init`, `git add .`,
 `git commit -m "Versão inicial"`, `git branch -M main`, `git remote add origin <endereço do repositório>`, `git push -u origin main`;
 no GitHub, em *Settings → Pages → Source*, escolher **GitHub Actions**.
 Repositório público: Pages é gratuito. Repositório privado: Pages exige plano pago.
