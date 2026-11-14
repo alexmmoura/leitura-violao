@@ -86,6 +86,8 @@ O passo a passo completo de cada função está dentro do app, em **Como estudar
 
 ## Versões e publicação (GitHub) — para nada se perder nem regredir
 
+**Publicado:** código em <https://github.com/alexmmoura/leitura-violao> · app em <https://alexmmoura.github.io/leitura-violao/> (é este endereço que se instala no celular).
+
 O projeto já traz `.github/workflows/publicar.yml`. Depois de colocado num repositório do GitHub:
 
 - cada alteração enviada fica registrada no histórico (dá para voltar a qualquer versão anterior);
