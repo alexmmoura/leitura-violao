@@ -1,4 +1,4 @@
-﻿LEITURA NO VIOLÃO — pacote portátil
+﻿CLAVES — pacote portátil
 ====================================
 
 Funciona em qualquer PC com Windows, sem instalar nada.

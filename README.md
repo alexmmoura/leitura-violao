@@ -1,11 +1,11 @@
-# Leitura no Violão
+# Claves
 
 Plataforma **local-first** e gratuita para desenvolver a leitura de partitura diretamente no violão.
 A especificação completa está em [`docs/especificacao.md`](docs/especificacao.md).
 
 ## Como usar no dia a dia
 
-1. **Dê dois cliques em `Iniciar.cmd`** (nesta pasta, `C:\Users\alex.moura\Documents\leitura-violao`) ou no atalho **Leitura no Violão** da Área de Trabalho.
+1. **Dê dois cliques em `Iniciar.cmd`** (nesta pasta, `C:\Users\alex.moura\Documents\leitura-violao`) ou no atalho **Claves** da Área de Trabalho.
    Abre uma janela preta (o servidor local) e o app no navegador, em `http://localhost:4173`.
 2. Estude. Pode minimizar a janela preta; **para encerrar, feche-a**.
 3. Opcional: no Chrome/Edge, use o ícone **Instalar** da barra de endereço para o app ganhar janela própria.

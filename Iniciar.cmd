@@ -1,11 +1,11 @@
 @echo off
 rem ============================================================
-rem  Leitura no Violao - iniciar o app (duplo clique)
+rem  Claves - iniciar o app (duplo clique)
 rem  Abre o app no navegador em http://localhost:4173
 rem ============================================================
 setlocal
 cd /d "%~dp0"
-title Leitura no Violao
+title Claves
 
 rem --- encontrar o Node: embutido (pacote portatil), no PATH ou na instalacao local ---
 set "NODE=node"

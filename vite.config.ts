@@ -12,10 +12,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'icon.ico'],
       manifest: {
-        name: 'Leitura no Violão',
-        short_name: 'Leitura',
+        name: 'Claves',
+        short_name: 'Claves',
         description: 'Treino local de leitura musical e domínio do braço do violão',
         lang: 'pt-BR',
         display: 'standalone',
@@ -23,10 +23,14 @@ export default defineConfig({
         start_url: '.',
         theme_color: '#000000',
         background_color: '#000000',
-        icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
       },

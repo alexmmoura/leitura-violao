@@ -160,8 +160,8 @@ export default function App() {
     <div className="shell">
       <nav className="tabbar" aria-label="Navegação principal">
         <div className="brand">
-          <span className="brand-mark" aria-hidden>𝄞</span>
-          <span>Leitura no Violão</span>
+          <img className="brand-logo" src="./icon.svg" alt="" width={28} height={28} />
+          <span>Claves</span>
         </div>
         {TABS.map((t) => (
           <button key={t.id} type="button" className={`tab${activeTab === t.id ? ' is-active' : ''}`} aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => navigate(t.id)}>

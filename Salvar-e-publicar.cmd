@@ -6,7 +6,7 @@ rem  Se os testes falharem, nada e salvo nem enviado.
 rem ============================================================
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
-title Leitura no Violao - salvar e publicar
+title Claves - salvar e publicar
 
 set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%ProgramFiles%\Git\cmd;%LOCALAPPDATA%\Programs\node-v26.13.1-win-x64;%PATH%"
 where git >nul 2>nul || (echo Git nao encontrado. Instale em https://git-scm.com & pause & exit /b 1)

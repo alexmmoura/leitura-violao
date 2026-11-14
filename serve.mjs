@@ -113,7 +113,7 @@ server.listen(PORT, LAN ? '0.0.0.0' : '127.0.0.1', () => {
     console.log('Neste modo o microfone e o uso sem internet NAO funcionam no celular (exigem https).');
     console.log('');
   }
-  console.log(`Leitura no Violão rodando em ${URL_APP}`);
+  console.log(`Claves rodando em ${URL_APP}`);
   console.log('Pode minimizar esta janela. Para encerrar o app, feche-a.');
   openBrowser();
 });
