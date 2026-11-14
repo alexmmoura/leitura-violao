@@ -1,0 +1,8 @@
+node_modules
+# dist NÃO é ignorada de propósito: é o app pronto que o Iniciar.cmd abre,
+# e precisa ir junto quando a pasta for copiada ou salva.
+*.log
+.DS_Store
+node/
+*.tsbuildinfo
+.claude/

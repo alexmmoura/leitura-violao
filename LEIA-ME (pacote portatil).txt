@@ -1,0 +1,31 @@
+﻿LEITURA NO VIOLÃO — pacote portátil
+====================================
+
+Funciona em qualquer PC com Windows, sem instalar nada.
+
+COMO USAR
+1. Extraia este .zip para uma pasta fixa (ex.: Documentos\LeituraNoViolao).
+   Não rode de dentro do .zip: clique com o botão direito → "Extrair tudo…".
+2. Dê dois cliques em "Iniciar.cmd".
+   Abre uma janela preta (o servidor local) e o app no navegador, em http://localhost:4173
+3. Para encerrar, feche a janela preta.
+
+Dica: clique com o botão direito em "Iniciar.cmd" → "Mostrar mais opções" →
+"Enviar para" → "Área de trabalho (criar atalho)" para ter um atalho.
+
+Se o Windows mostrar "O Windows protegeu o computador" (SmartScreen), clique em
+"Mais informações" → "Executar assim mesmo". É o próprio Node.js oficial, que vem
+dentro da pasta "node".
+
+LEVAR O SEU PROGRESSO ENTRE O TRABALHO E A CASA
+O progresso (e as suas partituras) fica guardado no navegador de cada PC, não nesta pasta.
+- No PC onde você estudou por último: Configurações → Exportar backup (JSON).
+- Leve o arquivo (pendrive, e-mail para você mesmo, Google Drive…).
+- No outro PC: Configurações → Importar backup… (substitui os dados de lá).
+Faça sempre do PC mais recente para o outro, senão perde o que fez.
+
+O QUE TEM AQUI
+- Iniciar.cmd  → abre o app
+- serve.mjs    → servidor local (só no próprio PC; nada fica exposto na rede)
+- dist\        → o app pronto
+- node\        → Node.js (licença MIT, ver node\LICENSE)
