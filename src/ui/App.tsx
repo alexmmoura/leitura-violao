@@ -160,7 +160,7 @@ export default function App() {
     <div className="shell">
       <nav className="tabbar" aria-label="Navegação principal">
         <div className="brand">
-          <img className="brand-logo" src="./icon.svg" alt="" width={28} height={28} />
+          <img className="brand-logo" src="./icon-192.png" alt="" width={28} height={28} />
           <span>Claves</span>
         </div>
         {TABS.map((t) => (

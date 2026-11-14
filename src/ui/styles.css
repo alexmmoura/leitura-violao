@@ -1,4 +1,4 @@
-/* Tokens de cor — claro por padrão, escuro pelo sistema ou por escolha. */
+﻿/* Tokens de cor — claro por padrão, escuro pelo sistema ou por escolha. */
 :root {
   --bg: #f6f5f2;
   --surface: #ffffff;
@@ -512,4 +512,4 @@ fieldset { border-radius: 16px; }
 .lesson-card.is-done .lesson-num { background: var(--ok); color: #000; }
 .note-names { text-align: center; font-size: 1.5rem; letter-spacing: 0.08em; margin: 0; }
 .now-note { text-align: center; font-size: 3.2rem; font-weight: 300; line-height: 1.1; margin: 4px 0; min-height: 3.6rem; }
-.brand-logo { border-radius: 6px; image-rendering: pixelated; }
+.brand-logo { border-radius: 6px; }
