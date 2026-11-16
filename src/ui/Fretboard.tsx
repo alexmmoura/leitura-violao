@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { soundingAt, type FretLocation, type Instrument } from '../core/instrument/instrument';
 import type { FretWindow } from '../core/instrument/position';
 import { letterName, alterSymbol } from '../core/theory/pitch';
@@ -13,6 +13,8 @@ export interface Mark {
   readonly loc: FretLocation;
   readonly kind: MarkKind;
   readonly label?: string;
+  /** Dica flutuante: aparece ao passar o mouse (ou tocar) na marca. */
+  readonly tip?: string;
 }
 
 /** Célula do mapa de calor: classe CSS (estado/escala), opacidade e dica. */
@@ -71,6 +73,20 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
     const b = X(x2);
     return { x: Math.min(a, b), width: Math.abs(b - a) };
   };
+
+  // dica flutuante das marcas (posição fixa na janela: não é cortada pela rolagem do braço)
+  const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const showTip = (e: { currentTarget: Element }, text: string) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setTip({ text, x: r.left + r.width / 2, y: r.top });
+  };
+  useEffect(() => setTip(null), [marks]);
+  useEffect(() => {
+    if (!tip) return;
+    const hide = () => setTip(null);
+    window.addEventListener('scroll', hide, true);
+    return () => window.removeEventListener('scroll', hide, true);
+  }, [tip]);
 
   const midY = (TOP + BOTTOM) / 2;
   const noteLabel = (loc: FretLocation) => {
@@ -182,18 +198,6 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
           }),
         )}
 
-      {/* marcas */}
-      {marks.map((m, k) => (
-        <g key={`k${k}`} className={`fb-mark is-${m.kind}`}>
-          <circle cx={X(cellCenter(m.loc.fret))} cy={stringY(m.loc.string)} r={12} />
-          {m.label && (
-            <text x={X(cellCenter(m.loc.fret))} y={stringY(m.loc.string) + 4} textAnchor="middle">
-              {m.label}
-            </text>
-          )}
-        </g>
-      ))}
-
       {/* áreas clicáveis */}
       {onCellClick &&
         inst.strings.map((_, i) =>
@@ -213,7 +217,30 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
             );
           }),
         )}
+
+      {/* marcas (por cima das áreas clicáveis; só as que têm dica capturam o ponteiro) */}
+      {marks.map((m, k) => (
+        <g
+          key={`k${k}`}
+          className={`fb-mark is-${m.kind}${m.tip ? ' has-tip' : ''}`}
+          onPointerEnter={m.tip ? (e) => e.pointerType === 'mouse' && showTip(e, m.tip!) : undefined}
+          onPointerLeave={m.tip ? (e) => e.pointerType === 'mouse' && setTip(null) : undefined}
+          onClick={m.tip ? (e) => (tip?.text === m.tip ? setTip(null) : showTip(e, m.tip!)) : undefined}
+        >
+          <circle cx={X(cellCenter(m.loc.fret))} cy={stringY(m.loc.string)} r={m.label && m.label.length > 1 ? 16 : 12} />
+          {m.label && (
+            <text x={X(cellCenter(m.loc.fret))} y={stringY(m.loc.string) + 4} textAnchor="middle">
+              {m.label}
+            </text>
+          )}
+        </g>
+      ))}
     </svg>
+    {tip && (
+      <div className="fb-tip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
+        {tip.text}
+      </div>
+    )}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { explainQuestion, locationLabel } from '../core/exercise/explain';
+import { explainQuestion, locationLabel, staffPlace } from '../core/exercise/explain';
 import { effectivePitch, evaluateStaffAnswer, type FretQuestion, type StaffAnswer } from '../core/exercise/fretQuestion';
 import { targetOf, type NoteQuestion } from '../core/exercise/noteQuestion';
 import { classifyLocation, ERROR_LABEL, evaluateAllLocations, type ErrorCode } from '../core/exercise/validate';
-import { locationKey, locationsFor, sameLocation, type FretLocation, type Instrument } from '../core/instrument/instrument';
+import { locationKey, locationsFor, sameLocation, soundingAt, type FretLocation, type Instrument } from '../core/instrument/instrument';
 import type { FretWindow } from '../core/instrument/position';
 import { keyAlterFor, type Fifths } from '../core/theory/keySignature';
 import { diatonicIndex, LETTERS, pitchName, type Alter, type Letter } from '../core/theory/pitch';
@@ -169,8 +169,8 @@ export default function TrainingSession(props: Props) {
       const ev = evaluateAllLocations(target, answer, inst, question.constraints);
       const explanation = explainQuestion(question, inst, opts);
       if (!ev.correct) {
-        if (ev.missing.length) explanation.push(`Faltaram: ${ev.missing.map(locationLabel).join('; ')}.`);
-        if (ev.extra.length) explanation.push(`Marcados a mais: ${ev.extra.map(locationLabel).join('; ')}.`);
+        if (ev.extra.length) explanation.splice(1, 0, `Você marcou a mais: ${ev.extra.map(locationLabel).join('; ')}.`);
+        if (ev.missing.length) explanation.splice(1, 0, `Você não marcou: ${ev.missing.map(locationLabel).join('; ')}.`);
       }
       record(question, { correct: ev.correct, error: ev.correct ? null : 'OTHER', rtMs, locations: answer, staff: null, explanation }, ev.score, answer);
     } else {
@@ -187,13 +187,13 @@ export default function TrainingSession(props: Props) {
     const rtMs = Math.round(performance.now() - shownAt.current);
     const r = evaluateStaffAnswer(question, a);
     const loc = question.location;
-    const explanation = [
-      `${locationLabel(loc)}: escreve-se ${pitchName(question.written, opts)} (soa uma oitava abaixo).`,
-      `Você escreveu ${pitchName(r.given, opts)}.`,
-    ];
-    if (r.error === 'ENHARMONIC' && question.requireSpelling) explanation.push('Nesta tonalidade a nota tem nome próprio: use a grafia da armadura.');
-    else if (r.error === 'ENHARMONIC') explanation.push('Use sustenido ou bemol simples; dobrados e Mi♯/Si♯/Fá♭/Dó♭ não são aceitos aqui.');
-    else if (!r.correct && !question.requireSpelling && question.written.alter !== 0) explanation.push('Grafias enarmônicas simples (ex.: Fá♯/Sol♭) são aceitas quando a tonalidade não define o nome.');
+    const octv = r.error === 'OCTAVE';
+    const nm = (p: typeof question.written) => `${pitchName(p, { ...opts, withOctave: octv })} (${staffPlace(p)})`;
+    const explanation = [`Pedida: ${locationLabel(loc)} → escreve-se ${nm(question.written)}.`];
+    if (!r.correct) explanation.push(`Você escreveu: ${nm(r.given)}.`);
+    if (r.error === 'ENHARMONIC' && question.requireSpelling) explanation.push('Dica: nesta tonalidade a nota tem nome próprio — use a grafia da armadura.');
+    else if (r.error === 'ENHARMONIC') explanation.push('Dica: use sustenido ou bemol simples; dobrados e Mi♯/Si♯/Fá♭/Dó♭ não são aceitos aqui.');
+    else if (!r.correct && !question.requireSpelling && question.written.alter !== 0) explanation.push('Dica: grafias enarmônicas simples (ex.: Fá♯/Sol♭) são aceitas quando a tonalidade não define o nome.');
     record(question, { correct: r.correct, error: r.error ?? null, rtMs, locations: [], staff: a, explanation }, r.correct ? 1 : 0, { written: pitchName(r.given, { naming: 'english' }) });
   };
 
@@ -214,9 +214,9 @@ export default function TrainingSession(props: Props) {
     // a corda não é observável: só há local inequívoco se a região tiver um único lugar para a nota
     const locs = c.correct && question.valid.length === 1 ? [question.valid[0]!] : [];
     const explanation = explainQuestion(question, inst, opts);
-    explanation.push(`Você tocou ${heardName} (escrita).`);
-    if (c.correct && question.valid.length > 1) explanation.push('O microfone não distingue a corda: qualquer um dos locais válidos produz este som.');
-    if (c.correct && question.answerMode === 'string') explanation.push('A corda pedida não pôde ser verificada pelo microfone — confira você mesmo.');
+    explanation.splice(1, 0, `Você tocou: ${heardName}.`);
+    if (c.correct && question.valid.length > 1) explanation.push('Dica: o microfone não distingue a corda — qualquer um dos locais válidos produz este som.');
+    if (c.correct && question.answerMode === 'string') explanation.push('Dica: a corda pedida não pôde ser verificada pelo microfone — confira você mesmo.');
     record(question, { correct: c.correct, error: c.error ?? null, rtMs, locations: locs, staff: null, explanation }, c.correct ? 1 : 0, locs);
   };
   useMicNotes(submitPitch, micOn && micUsable && !view);
@@ -358,16 +358,29 @@ export default function TrainingSession(props: Props) {
 
   const marks: Mark[] = useMemo(() => {
     if (!question) return [];
-    if (question.kind === 'fretboard>staff') return [{ loc: question.location, kind: view ? (view.correct ? 'correct' : 'wrong') : 'selected' }];
+    const short = (p: Parameters<typeof pitchName>[0]) => pitchName(p, { naming: settings.naming, withOctave: false });
+    const asked = short(question.written);
+    if (question.kind === 'fretboard>staff') {
+      // o nome só aparece DEPOIS da resposta (antes, seria a própria resposta)
+      return [{ loc: question.location, kind: view ? (view.correct ? 'correct' : 'wrong') : 'selected', ...(view ? { label: asked, tip: `${asked} — ${locationLabel(question.location)}` } : {}) }];
+    }
     if (!view) return selected.map((loc) => ({ loc, kind: 'selected' as const }));
     const answerKeys = new Set(view.locations.map(locationKey));
     const validKeys = new Set(question.valid.map(locationKey));
     const out: Mark[] = [];
-    for (const l of locationsFor(question.sounding, inst)) if (!validKeys.has(locationKey(l)) && !answerKeys.has(locationKey(l))) out.push({ loc: l, kind: 'muted' });
-    for (const v of question.valid) out.push({ loc: v, kind: answerKeys.has(locationKey(v)) ? 'correct' : 'valid' });
-    for (const a of view.locations) if (!validKeys.has(locationKey(a))) out.push({ loc: a, kind: 'wrong' });
+    for (const l of locationsFor(question.sounding, inst))
+      if (!validKeys.has(locationKey(l)) && !answerKeys.has(locationKey(l))) out.push({ loc: l, kind: 'muted', tip: `Mesmo ${asked}, mas fora da região pedida — ${locationLabel(l)}` });
+    for (const v of question.valid) {
+      const hit = answerKeys.has(locationKey(v));
+      out.push({ loc: v, kind: hit ? 'correct' : 'valid', label: asked, tip: `${hit ? 'Certo' : 'Era aqui'}: ${asked} — ${locationLabel(v)}` });
+    }
+    for (const a of view.locations) {
+      if (validKeys.has(locationKey(a))) continue;
+      const got = short(preferredSpelling(soundingAt(a, inst) - inst.transposition));
+      out.push({ loc: a, kind: 'wrong', label: got, tip: `Você marcou: ${got} — ${locationLabel(a)}` });
+    }
     return out;
-  }, [question, view, selected, inst]);
+  }, [question, view, selected, inst, settings.naming]);
 
   const stats = useMemo(() => {
     const n = results.length;
@@ -499,12 +512,20 @@ export default function TrainingSession(props: Props) {
                   {view.correct ? 'Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? 'Nota certa, região errada' : 'Incorreto'}
                   <span className="rt">{secs(view.rtMs)}</span>
                 </p>
-                {view.error && view.error !== 'OUT_OF_CONSTRAINTS' && <p className="err-code">{ERROR_LABEL[view.error]}</p>}
-                <ul>
-                  {view.explanation.map((l, i) => (
-                    <li key={i}>{l}</li>
-                  ))}
-                </ul>
+                {view.error && view.error !== 'OUT_OF_CONSTRAINTS' && view.error !== 'OTHER' && <p className="err-code">{ERROR_LABEL[view.error]}</p>}
+                <dl className="explain">
+                  {view.explanation.map((l, i) => {
+                    // "Rótulo: texto" → rótulo em destaque, para ficar claro a que cada linha se refere
+                    const m = /^([^:.]{2,24}): (.*)$/s.exec(l);
+                    return (
+                      <div key={i} className={m ? `explain-row is-${m[1] === 'Pedida' ? 'asked' : m[1]!.startsWith('Você') ? 'yours' : 'note'}` : 'explain-row'}>
+                        {m && <dt>{m[1]}</dt>}
+                        <dd>{m ? m[2] : l}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+                {!isStaffQ && <p className="muted small explain-hint">Passe o mouse (ou toque) nas bolinhas do braço para ver cada nota.</p>}
                 {!finished && (
                   <button type="button" className="btn-primary" onClick={next}>
                     Próxima (Enter)
