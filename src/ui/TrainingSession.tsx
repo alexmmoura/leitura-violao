@@ -362,22 +362,22 @@ export default function TrainingSession(props: Props) {
     const asked = short(question.written);
     if (question.kind === 'fretboard>staff') {
       // o nome só aparece DEPOIS da resposta (antes, seria a própria resposta)
-      return [{ loc: question.location, kind: view ? (view.correct ? 'correct' : 'wrong') : 'selected', ...(view ? { label: asked, tip: `${asked} — ${locationLabel(question.location)}` } : {}) }];
+      return [{ loc: question.location, kind: view ? (view.correct ? 'correct' : 'wrong') : 'selected', ...(view ? { label: asked } : {}) }];
     }
     if (!view) return selected.map((loc) => ({ loc, kind: 'selected' as const }));
     const answerKeys = new Set(view.locations.map(locationKey));
     const validKeys = new Set(question.valid.map(locationKey));
     const out: Mark[] = [];
     for (const l of locationsFor(question.sounding, inst))
-      if (!validKeys.has(locationKey(l)) && !answerKeys.has(locationKey(l))) out.push({ loc: l, kind: 'muted', tip: `Mesmo ${asked}, mas fora da região pedida — ${locationLabel(l)}` });
+      if (!validKeys.has(locationKey(l)) && !answerKeys.has(locationKey(l))) out.push({ loc: l, kind: 'muted' });
     for (const v of question.valid) {
       const hit = answerKeys.has(locationKey(v));
-      out.push({ loc: v, kind: hit ? 'correct' : 'valid', label: asked, tip: `${hit ? 'Certo' : 'Era aqui'}: ${asked} — ${locationLabel(v)}` });
+      out.push({ loc: v, kind: hit ? 'correct' : 'valid', label: asked });
     }
     for (const a of view.locations) {
       if (validKeys.has(locationKey(a))) continue;
       const got = short(preferredSpelling(soundingAt(a, inst) - inst.transposition));
-      out.push({ loc: a, kind: 'wrong', label: got, tip: `Você marcou: ${got} — ${locationLabel(a)}` });
+      out.push({ loc: a, kind: 'wrong', label: got });
     }
     return out;
   }, [question, view, selected, inst, settings.naming]);
@@ -525,7 +525,6 @@ export default function TrainingSession(props: Props) {
                     );
                   })}
                 </dl>
-                {!isStaffQ && <p className="muted small explain-hint">Passe o mouse (ou toque) nas bolinhas do braço para ver cada nota.</p>}
                 {!finished && (
                   <button type="button" className="btn-primary" onClick={next}>
                     Próxima (Enter)

@@ -573,10 +573,7 @@ fieldset { border-radius: 16px; }
 .explain-row.is-asked dt { color: var(--ok); }
 .explain-row.is-yours dt { color: var(--bad); }
 .feedback.is-ok .explain-row.is-yours dt { color: var(--ok); }
-.explain-hint { margin: 0 0 10px; }
 .fb-scroll { position: relative; }
 .fb-mark { pointer-events: none; }
-.fb-mark.has-tip { pointer-events: auto; cursor: help; }
 .fb-mark.is-correct text, .fb-mark.is-wrong text { fill: var(--bg); }
-.fb-tip { position: fixed; z-index: 50; transform: translate(-50%, -100%); margin-top: -8px; padding: 6px 10px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 0.9rem; font-weight: 600; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
 .fb-mark text { font-size: 14px; }
