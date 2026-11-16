@@ -508,13 +508,16 @@ function Practice({ score, inst, settings, onBack }: { score: ScoreDef; inst: In
       {error && <p className="warn">{error}</p>}
       {melody && (
         <>
-          <div className="config-grid">
-            <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={isCompound(score.meter)} />
-          </div>
+          {!run && (
+            <div className="config-grid">
+              <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={isCompound(score.meter)} />
+            </div>
+          )}
           <div className="actions">
             <button type="button" className="btn-primary" onClick={start}>
               {run ? 'Recomeçar' : 'Começar'}
             </button>
+            {run && <button type="button" className="btn-ghost" onClick={() => setRun(null)}>⚙ Opções</button>}
             <button type="button" onClick={() => playMelody(melody, opts.mode === 'static' ? 72 : opts.bpm * (isCompound(score.meter) ? 1.5 : 1), settings.aRef)}>
               🔊 Ouvir a música
             </button>
@@ -544,7 +547,7 @@ function Practice({ score, inst, settings, onBack }: { score: ScoreDef; inst: In
               continueLabel="Tocar de novo"
             />
           ) : (
-            <MelodyStaff melody={melody} label={score.title} />
+            <MelodyStaff melody={melody} label={score.title} fit />
           )}
         </>
       )}

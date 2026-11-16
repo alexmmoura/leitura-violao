@@ -132,18 +132,21 @@ function SolfegeRun({ title, melody, inst, settings, onBack, onNext, hasNext }: 
   return (
     <section className="page">
       <Back onClick={onBack} title={title} />
-      <div className="config-grid">
-        <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={isCompound(melody.config.meter ?? 4)} />
-      </div>
+      {!run && (
+        <div className="config-grid">
+          <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={isCompound(melody.config.meter ?? 4)} />
+        </div>
+      )}
       <div className="actions">
         <button type="button" className="btn-primary" onClick={start}>{run ? 'Recomeçar' : 'Começar'}</button>
+        {run && <button type="button" className="btn-ghost" onClick={() => setRun(null)}>⚙ Opções</button>}
         {hasNext && <button type="button" onClick={onNext}>Próxima lição ›</button>}
       </div>
       {run ? (
         <ReadingSession key={run} melody={melody} mode={opts.mode} bpm={opts.bpm} inst={inst} settings={settings} module="D" lookAhead={opts.lookAhead} preReadSec={opts.preRead} clickDuring={opts.clickDuring} sing={opts.sing} onDone={hasNext ? onNext : start} continueLabel={hasNext ? 'Próxima lição' : 'Repetir'} />
       ) : (
         <>
-          <MelodyStaff melody={melody} label={title} />
+          <MelodyStaff melody={melody} label={title} fit />
           <p className="muted small center">Com microfone: ligue-o e cante cada nota (vale qualquer oitava). Sem microfone: clique as notas no braço, ou desmarque “Cantar”.</p>
         </>
       )}

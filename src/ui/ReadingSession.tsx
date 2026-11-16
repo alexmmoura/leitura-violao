@@ -416,7 +416,7 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
         </div>
       )}
 
-      <MelodyStaff melody={melody} marks={stableMarks} showFingering={phase === 'done'} label="Frase para ler" />
+      <MelodyStaff melody={melody} marks={stableMarks} showFingering={phase === 'done'} label="Frase para ler" fit />
       {showName && phase === 'run' && <p className="now-note" aria-live="off">{nowName ?? '·'}</p>}
 
       <Fretboard

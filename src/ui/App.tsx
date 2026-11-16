@@ -145,8 +145,11 @@ export default function App() {
   const reviewFor = (p: PageId) => (review && review.page === p ? { review: review.ids, onReviewDone: () => { setReview(null); setPage('training'); } } : {});
   /** Uma nova fila remonta a página (estado limpo). */
   const reviewKey = (p: PageId) => (review && review.page === p ? String(review.key) : p);
+  // Menu lateral: recolhe sozinho (só ícones) nas telas de estudo; o botão ☰ abre/fecha.
+  const [navOverride, setNavOverride] = useState<boolean | null>(null);
   const navigate = (p: PageId) => {
     setReview(null);
+    setNavOverride(null);
     if (!TABS.some((t) => t.id === p)) setFrom(tabOf(page));
     setPage(p);
     window.scrollTo(0, 0);
@@ -156,15 +159,20 @@ export default function App() {
   const isHub = TABS.some((t) => t.id === page);
   const activeTab = isHub ? (page as TabId) : (PARENT[page] ?? from);
 
+  const navCollapsed = navOverride ?? !isHub;
+
   return (
-    <div className="shell">
+    <div className={`shell${navCollapsed ? ' is-collapsed' : ''}`}>
       <nav className="tabbar" aria-label="Navegação principal">
         <div className="brand">
           <img className="brand-logo" src="./icon-192.png" alt="" width={28} height={28} />
           <span>Claves</span>
+          <button type="button" className="nav-toggle" aria-expanded={!navCollapsed} title={navCollapsed ? 'Abrir o menu' : 'Recolher o menu'} aria-label={navCollapsed ? 'Abrir o menu' : 'Recolher o menu'} onClick={() => setNavOverride(!navCollapsed)}>
+            {navCollapsed ? '☰' : '«'}
+          </button>
         </div>
         {TABS.map((t) => (
-          <button key={t.id} type="button" className={`tab${activeTab === t.id ? ' is-active' : ''}`} aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => navigate(t.id)}>
+          <button key={t.id} type="button" title={t.label} className={`tab${activeTab === t.id ? ' is-active' : ''}`} aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => navigate(t.id)}>
             <span className="tab-icon" aria-hidden>{t.icon}</span>
             <span>{t.label}</span>
           </button>
@@ -189,7 +197,7 @@ export default function App() {
         {page === 'more' && <Hub title="Mais" lead="Acompanhamento, microfone e ajustes." groups={[{ group: '', items: MORE }]} go={navigate} />}
         {page === 'tools' && <ToolsPage settings={settings} />}
         {page === 'theory' && <TheoryPage />}
-        {page === 'guide' && <GuidePage go={navigate} />}
+        {page === 'guide' && <GuidePage go={navigate} settings={settings} />}
         {page === 'scores' && <ScoresPage settings={settings} />}
         {page === 'mic' && <MicPage settings={settings} update={update} />}
         {page === 'training' && <MyTrainingPage settings={settings} onReview={goReview} />}

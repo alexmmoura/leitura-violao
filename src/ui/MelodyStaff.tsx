@@ -19,14 +19,28 @@ interface Props {
   /** Dedos sugeridos sob as notas. */
   showFingering?: boolean;
   label?: string;
+  /** Ajusta os compassos por linha à largura disponível, para a pauta ficar GRANDE (telas de prática). */
+  fit?: boolean;
 }
 
 const fontsReady = VexFlow.loadFonts('Bravura', 'Academico').catch(() => undefined);
 const PER_LINE = 4;
+const FIRST_W = 110;
+const MEASURE_W = 230;
 
-export default function MelodyStaff({ melody, marks, showFingering = false, label }: Props) {
+export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [perLine, setPerLine] = useState(PER_LINE);
+  useEffect(() => {
+    const el = host.current;
+    if (!fit || !el) return;
+    const calc = () => setPerLine(Math.max(2, Math.min(PER_LINE, Math.floor((el.clientWidth - FIRST_W - 20) / MEASURE_W))));
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fit]);
   // As marcas (cores) mudam a cada nota tocada; a pauta só é DESENHADA quando a melodia muda.
   // Trocar a cor é só trocar uma classe no elemento já desenhado: resposta visual imediata.
   const noteEls = useRef<(SVGElement | null)[]>([]);
@@ -55,9 +69,10 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
       try {
         const c = melody.config;
         const measures = Array.from({ length: c.measures }, (_, mi) => melody.events.map((e, i) => ({ e, i })).filter((x) => x.e.measure === mi));
+        const PER_LINE = perLine; // (sombra a constante: compassos por linha desta pauta)
         const lines = Math.ceil(c.measures / PER_LINE);
-        const first = 110;
-        const per = 230;
+        const first = FIRST_W;
+        const per = MEASURE_W;
         const width = first + per * Math.min(PER_LINE, c.measures) + 20;
         const lineH = 150;
         const height = lines * lineH + 10;
@@ -136,6 +151,8 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           svg.removeAttribute('height');
           svg.style.width = '';
           svg.style.height = '';
+          // frases curtas não devem ficar gigantes
+          if (fit) svg.style.maxWidth = `${Math.round(width * 1.5)}px`;
           svg.setAttribute('fill', 'currentColor');
           svg.setAttribute('stroke', 'currentColor');
           svg.setAttribute('role', 'img');
@@ -151,7 +168,7 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [melody, showFingering, label]);
+  }, [melody, showFingering, label, perLine, fit]);
 
   return (
     <div className="melody-staff">

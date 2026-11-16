@@ -52,6 +52,8 @@ export default function ReadingPage({ settings, review, onReviewDone, presetSing
   const [run, setRun] = useState<{ melody: Melody; key: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ReadingRecord[]>([]);
+  /** Durante a prática as opções ficam recolhidas (a pauta e o braço ganham a tela). */
+  const [showConfig, setShowConfig] = useState(false);
 
   // revisão: cada item é um MATERIAL ("leitura:<chave>"); a frase lida é sempre nova
   const rq = useReviewQueue(review);
@@ -122,21 +124,50 @@ export default function ReadingPage({ settings, review, onReviewDone, presetSing
     if (opts.mode !== 'static') void audioContext().resume();
     try {
       setError(null);
+      setShowConfig(false);
       setRun({ melody: generateMelody(config, inst, randomSeed()), key: Date.now() });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
+  const specs = regionSpecs(region);
+  const span = (s: PositionSpec) => (s.kind === 'fixed' ? `casas ${s.position}–${s.position + 3}` : '');
+  const regionHint =
+    specs.region.kind === 'open'
+      ? 'Cordas soltas e casas 1 a 4 (dedo 1 na casa 1).'
+      : specs.region.kind === 'whole'
+        ? 'Vale qualquer casa do braço — você escolhe onde tocar cada nota.'
+        : specs.shiftTo && specs.shiftTo.kind === 'fixed'
+          ? `Começa com a mão na ${roman(specs.region.position)} posição (${span(specs.region)}) e muda para a ${roman(specs.shiftTo.position)} (${span(specs.shiftTo)}) durante a frase.`
+          : `Dedo 1 (indicador) na casa ${specs.region.position}: a mão fica parada e você usa só as ${span(specs.region)}, um dedo por casa.`;
+  const focus = !!run && !showConfig;
+  const MODE_SHORT = { static: 'nota a nota', continuous: `contínuo, ${opts.bpm} bpm`, guitar: `no violão, ${opts.bpm} bpm` } as const;
+
   return (
     <section className="page">
-      <header className="page-head">
-        <h1>{presetSing ? 'Solfejo' : 'Leitura de partituras'}</h1>
-        <p className="muted">Módulo D — frases originais geradas a cada tentativa. Na leitura à primeira vista, parar é o erro mais grave.</p>
-      </header>
+      {!focus && (
+        <header className="page-head">
+          <h1>{presetSing ? 'Solfejo' : 'Leitura de partituras'}</h1>
+          <p className="muted">Módulo D — frases originais geradas a cada tentativa. Na leitura à primeira vista, parar é o erro mais grave.</p>
+        </header>
+      )}
       <ReviewBanner q={rq} naming={settings.naming} onExit={onReviewDone} />
       {rq.active && !run && <p className="small">Material da revisão já configurado abaixo — escolha o modo e clique em <strong>Começar</strong>.</p>}
 
+      {focus && (
+        <div className="focus-bar">
+          <span className="focus-summary">
+            {keyLabel(fifths)} · {meterStr} · {measures} compassos · {MODE_SHORT[opts.mode]}
+            {opts.sing ? ' · solfejo' : ''}
+          </span>
+          <button type="button" className="btn-ghost" onClick={() => setShowConfig(true)}>⚙ Opções</button>
+          <button type="button" className="btn-primary" onClick={start}>Nova frase</button>
+        </div>
+      )}
+
+      {!focus && (
+      <>
       <div className="config-grid">
         <fieldset>
           <legend>Região</legend>
@@ -150,6 +181,7 @@ export default function ReadingPage({ settings, review, onReviewDone, presetSing
             ))}
             <option value="whole">Braço inteiro</option>
           </select>
+          <p className="muted small field-hint">{regionHint}</p>
           <select value={fifths} onChange={(e) => setFifths(Number(e.target.value))} aria-label="Tonalidade">
             {Array.from({ length: 9 }, (_, i) => i - 4).map((f) => (
               <option key={f} value={f}>{keyLabel(f)}</option>
@@ -199,10 +231,13 @@ export default function ReadingPage({ settings, review, onReviewDone, presetSing
         <button type="button" className="btn-primary" onClick={start}>
           {run ? 'Nova frase' : 'Começar'}
         </button>
+        {run && <button type="button" className="btn-ghost" onClick={() => setShowConfig(false)}>Fechar opções</button>}
         <span className="muted small">
           Andamento sustentável neste material: <strong>{sustainable ? `${sustainable} bpm` : 'ainda não medido'}</strong> (3 frases novas seguidas com ≥ 85% no tempo e ≥ 90% de continuidade, modo contínuo).
         </span>
       </div>
+      </>
+      )}
       {error && <p className="warn">{error}</p>}
 
       {run && (

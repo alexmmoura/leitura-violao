@@ -1,4 +1,12 @@
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { locationLabel } from '../core/exercise/explain';
+import { locationsFor, makeGuitar, soundingAt, type FretLocation } from '../core/instrument/instrument';
+import { fingerFor, fixedPosition, fretWindow, OPEN_POSITION, positionLabel, roman } from '../core/instrument/position';
+import { asSounding, letterName } from '../core/theory/pitch';
+import { preferredSpelling } from '../core/theory/spelling';
+import type { Settings } from '../data/settings';
+import Fretboard, { type Mark } from './Fretboard';
+import Staff from './Staff';
 
 /**
  * Guia de estudo — como usar cada função, passo a passo, e em que ordem estudar.
@@ -15,7 +23,124 @@ function Sec({ id, title, open, children }: { id: string; title: string; open?: 
   );
 }
 
-export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
+/** Posições do caminho de estudo (0 = aberta) e as casas que cada uma cobre. */
+const DEMO_POSITIONS = [0, 2, 5, 7, 9];
+const FINGERS = ['indicador', 'médio', 'anelar', 'mínimo'];
+const posName = (p: number) => (p === 0 ? 'Aberta' : roman(p));
+
+/** Diagrama interativo: escolha uma posição e veja a "janela" de casas, os dedos e as notas. */
+function PositionDemo({ settings }: { settings: Settings }) {
+  const inst = useMemo(() => makeGuitar({ frets: settings.frets }), [settings.frets]);
+  const [pos, setPos] = useState(5);
+  const [show, setShow] = useState<'fingers' | 'names'>('fingers');
+  const spec = pos === 0 ? OPEN_POSITION : fixedPosition(pos);
+  const win = fretWindow(spec, inst.frets);
+  const first = pos === 0 ? 1 : pos;
+
+  const marks = useMemo(() => {
+    const out: Mark[] = [];
+    for (let s = 1; s <= inst.strings.length; s++) {
+      for (let f = win.openStrings ? 0 : win.min; f <= win.max; f++) {
+        if (f > 0 && f < win.min) continue;
+        const loc: FretLocation = { string: s, fret: f };
+        if (show === 'fingers') out.push({ loc, kind: 'valid', label: String(fingerFor(loc, spec, inst.frets) ?? '') });
+        else {
+          const p = preferredSpelling(soundingAt(loc, inst) - inst.transposition);
+          if (p.alter === 0) out.push({ loc, kind: 'valid', label: letterName(p.letter, settings.naming) });
+        }
+      }
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inst, pos, show, settings.naming]);
+
+  // faixa "onde cada posição mora": casas 0 a 12
+  const col = (f: number) => 16 + f * 48;
+
+  return (
+    <div className="pos-demo">
+      <div className="pill-row" role="group" aria-label="Posição do exemplo">
+        {DEMO_POSITIONS.map((p) => (
+          <button key={p} type="button" className={`pill${pos === p ? ' is-on' : ''}`} aria-pressed={pos === p} onClick={() => setPos(p)}>
+            {posName(p)}
+          </button>
+        ))}
+      </div>
+
+      <svg className="pos-strip" viewBox="0 0 656 150" role="img" aria-label="Casas cobertas por cada posição">
+        {Array.from({ length: 13 }, (_, f) => (
+          <g key={f}>
+            <text x={col(f) + 24} y={14} className="ps-num">{f === 0 ? 'solta' : f}</text>
+            <line x1={col(f)} x2={col(f)} y1={20} y2={146} className="ps-grid" />
+          </g>
+        ))}
+        <line x1={col(13)} x2={col(13)} y1={20} y2={146} className="ps-grid" />
+        {DEMO_POSITIONS.map((p, i) => {
+          const from = p === 0 ? 0 : p;
+          const to = p === 0 ? 4 : p + 3;
+          return (
+            <g key={p} onClick={() => setPos(p)}>
+              <rect x={col(from) + 2} y={24 + i * 25} width={(to - from + 1) * 48 - 4} height={21} rx={6} className={`ps-bar${pos === p ? ' is-on' : ''}`} />
+              <text x={(col(from) + col(to + 1)) / 2} y={39 + i * 25} className="ps-label">
+                {p === 0 ? 'Posição aberta' : `${roman(p)} posição`}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <p className="pos-caption">
+        <strong>{positionLabel(spec)}</strong>:{' '}
+        {pos === 0
+          ? 'a mão fica junto à pestana. Cordas soltas (0) e casas 1 a 4.'
+          : `o dedo 1 fica na casa ${pos} e a mão não sai dali. Você só usa as casas ${pos} a ${pos + 3}.`}
+      </p>
+      <ul className="finger-row">
+        {FINGERS.map((name, i) => (
+          <li key={name}>
+            <span className="finger-num">{i + 1}</span> {name} → casa {first + i}
+          </li>
+        ))}
+      </ul>
+
+      <div className="pill-row" role="group" aria-label="O que mostrar no braço">
+        <button type="button" className={`pill${show === 'fingers' ? ' is-on' : ''}`} aria-pressed={show === 'fingers'} onClick={() => setShow('fingers')}>
+          Ver os dedos
+        </button>
+        <button type="button" className={`pill${show === 'names' ? ' is-on' : ''}`} aria-pressed={show === 'names'} onClick={() => setShow('names')}>
+          Ver as notas
+        </button>
+      </div>
+      <Fretboard inst={inst} settings={{ ...settings, showNoteNames: false }} window={win} marks={marks} />
+      <p className="muted small pos-caption">
+        A faixa colorida no braço é a “janela” da posição. {show === 'fingers' ? 'Os números são os dedos da mão esquerda (0 = corda solta).' : 'Estas são as notas naturais que existem dentro da janela (sustenidos e bemóis ficam nas casas vazias).'}
+      </p>
+    </div>
+  );
+}
+
+/** A mesma nota escrita existe em vários lugares do braço — é por isso que a posição importa. */
+function SameNoteDemo({ settings }: { settings: Settings }) {
+  const inst = useMemo(() => makeGuitar({ frets: settings.frets }), [settings.frets]);
+  const locs = useMemo(() => locationsFor(asSounding(64), inst), [inst]);
+  const staffNotes = useMemo(() => [{ pitch: preferredSpelling(64 - inst.transposition), accidental: null }], [inst.transposition]);
+  const marks: Mark[] = useMemo(() => locs.map((loc) => ({ loc, kind: 'correct' as const })), [locs]);
+  return (
+    <div className="pos-demo">
+      <div className="same-note">
+        <Staff fifths={0} notes={staffNotes} label="Mi do 4º espaço" />
+        <p className="pos-caption">
+          Este <strong>Mi</strong> (4º espaço) pode ser tocado em <strong>{locs.length} lugares</strong>: {locs.map(locationLabel).join(' · ')}. Todos soam a mesma nota.
+          A partitura não diz qual usar — <strong>a posição escolhida decide</strong>: na posição aberta é a corda 1 solta; na V posição é a corda 2, casa 5; na IX
+          posição é a corda 3, casa 9.
+        </p>
+      </div>
+      <Fretboard inst={inst} settings={{ ...settings, showNoteNames: false }} window={null} marks={marks} />
+    </div>
+  );
+}
+
+export default function GuidePage({ go, settings }: { go: (p: GuideTarget) => void; settings: Settings }) {
   const Go = ({ to, children }: { to: GuideTarget; children: ReactNode }) => (
     <button type="button" className="btn-link" onClick={() => go(to)}>
       {children}
@@ -31,7 +156,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </header>
 
-      <Sec id="g-ideia" title="1. A ideia do app em 1 minuto" open>
+      <Sec id="g-ideia" title="A ideia do app em 1 minuto" open>
         <p>
           Ler partitura no violão é responder três perguntas sem parar: <strong>que nota é esta?</strong>, <strong>onde ela fica no braço?</strong> e{' '}
           <strong>quando ela soa (ritmo)?</strong>. Cada tela treina uma parte; <Go to="training">Meu treinamento</Go> junta tudo e decide sozinho o
@@ -62,7 +187,102 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-rotina" title="2. Rotina diária recomendada">
+      <Sec id="g-posicoes" title="Posições no braço: o que é “V posição” e como estudar com isso" open>
+        <h3>A ideia em uma frase</h3>
+        <p>
+          <strong>Posição é o lugar do braço onde a mão esquerda fica parada.</strong> O número romano diz em que casa fica o <strong>dedo 1</strong> (indicador).
+          “V posição” = dedo 1 na casa 5. Só isso.
+        </p>
+        <table className="theory-table">
+          <tbody>
+            <tr>
+              <td>Número romano</td>
+              <td>I = 1 · II = 2 · III = 3 · IV = 4 · V = 5 · VII = 7 · IX = 9 · XII = 12</td>
+            </tr>
+            <tr>
+              <td>Regra</td>
+              <td>um dedo por casa: dedo 1 na casa da posição, dedos 2, 3 e 4 nas três casas seguintes</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Veja no braço (clique nas posições)</h3>
+        <PositionDemo settings={settings} />
+
+        <h3>Por que isso ajuda a ler partitura</h3>
+        <p>
+          No violão, a mesma nota escrita existe em vários lugares. Sem escolher uma posição, cada nota vira uma dúvida (“toco onde?”). Dentro de uma posição,{' '}
+          <strong>cada nota da pauta tem um único lugar</strong> — você lê e o dedo já sabe aonde ir, sem olhar para a mão.
+        </p>
+        <SameNoteDemo settings={settings} />
+
+        <h3>O que significa cada opção de “Região” nas telas</h3>
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>Posição aberta</strong></td>
+              <td>Cordas soltas e casas 1 a 4. É onde todo mundo começa.</td>
+            </tr>
+            <tr>
+              <td><strong>II, V, VII, IX… posição</strong></td>
+              <td>A mão parada com o dedo 1 nessa casa; só 4 casas são usadas (V = casas 5 a 8).</td>
+            </tr>
+            <tr>
+              <td><strong>Mudança II → V</strong></td>
+              <td>A frase começa numa posição e, no meio, a mão desliza para a outra. Só depois de dominar as duas separadas.</td>
+            </tr>
+            <tr>
+              <td><strong>Braço inteiro</strong></td>
+              <td>Sem restrição: qualquer lugar certo vale. É o objetivo final, não o começo.</td>
+            </tr>
+            <tr>
+              <td><strong>Abertura do dedo 1 / dedo 4</strong></td>
+              <td>O dedo 1 estica uma casa para trás, ou o dedo 4 uma casa para a frente, sem mover a mão. Deixe desligado no início.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Como estudar uma posição — passo a passo</h3>
+        <p>Faça os 5 passos com a <strong>mesma posição</strong> escolhida em todas as telas. Só troque de posição depois do passo 5.</p>
+        <ol className="guide-steps">
+          <li>
+            <p>
+              <strong>Conheça o mapa.</strong> Em <Go to="positions">Treinamento por posição</Go>, escolha a posição e olhe onde está cada nota e qual dedo toca. Com o
+              violão, toque corda por corda dizendo o nome das notas.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Notas soltas, uma de cada vez.</strong> Em <Go to="flashcards">Leitura imediata de notas</Go>, escolha a mesma Região. Comece pelas cordas 1–3,
+              depois 4–6, depois todas.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Frases sem pressa.</strong> Em <Go to="reading">Leitura de partituras</Go>, mesma Região, modo <em>Estático</em>, “Só semínimas” e “Só graus
+              conjuntos”. Meta: 90% de acerto em frases novas.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Frases no tempo.</strong> Ainda na Leitura, passe para o modo com metrônomo, em andamento lento (50–60 bpm). Depois aumente o ritmo e os saltos,
+              um de cada vez.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Teste de conclusão.</strong> Volte ao <Go to="positions">Treinamento por posição</Go> e clique em <em>Fazer o teste</em>. Aprovado? Passe para a
+              próxima posição.
+            </p>
+          </li>
+        </ol>
+        <p>
+          <strong>Ordem sugerida:</strong> Aberta → II → V → VII → IX. Juntas elas cobrem o braço até a casa 12 (veja a faixa acima: uma começa onde a outra termina).
+          Quando duas vizinhas estiverem firmes, treine a <em>Mudança</em> entre elas.
+        </p>
+      </Sec>
+
+      <Sec id="g-rotina" title="Rotina diária recomendada">
         <h3>No trabalho (sem violão) — 15 a 30 min</h3>
         <ol>
           <li>
@@ -96,7 +316,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         <p className="muted small">Regra de ouro: pouco todo dia vale mais que muito uma vez por semana. As revisões são agendadas para o dia certo.</p>
       </Sec>
 
-      <Sec id="g-ordem" title="3. Em que ordem avançar (o caminho)">
+      <Sec id="g-ordem" title="Em que ordem avançar (o caminho)">
         <ol>
           <li>
             <strong>Posição aberta, cordas 1–3, Dó maior</strong> (sem acidentes). Meu treinamento já começa aqui sozinho.
@@ -120,7 +340,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-mapa" title="4. Cola: as notas da posição aberta na pauta">
+      <Sec id="g-mapa" title="Cola: as notas da posição aberta na pauta">
         <p>Linhas e espaços contados de baixo para cima. “Suplementar” = linha extra abaixo da pauta.</p>
         <table>
           <thead>
@@ -182,7 +402,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-meu" title="5. Meu treinamento (o centro de tudo)">
+      <Sec id="g-meu" title="Meu treinamento (o centro de tudo)">
         <ol>
           <li>
             Os números no topo: <strong>notas para revisar</strong> (vencidas hoje), <strong>itens novos</strong> liberados hoje, <strong>dominados</strong> e{' '}
@@ -207,7 +427,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ol>
       </Sec>
 
-      <Sec id="g-flash" title="6. Flashcards (Reconhecimento de notas)">
+      <Sec id="g-flash" title="Flashcards (Reconhecimento de notas)">
         <p>Treino rápido de nota isolada. Configure e clique <strong>Começar</strong>.</p>
         <ul>
           <li>
@@ -280,7 +500,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-pos" title="7. Treinamento por posição">
+      <Sec id="g-pos" title="Treinamento por posição">
         <ol>
           <li>
             Escolha a <strong>Posição</strong>. O braço mostra todas as notas dela com o número do dedo; a explicação diz a janela de casas e a extensão.
@@ -294,7 +514,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ol>
       </Sec>
 
-      <Sec id="g-leitura" title="8. Leitura de partituras (frases)">
+      <Sec id="g-leitura" title="Leitura de partituras (frases)">
         <p>Cada clique em Começar/Nova frase cria uma melodia nova, nunca repetida — é leitura à primeira vista de verdade.</p>
         <h3>Configurar</h3>
         <ul>
@@ -367,7 +587,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-obras" title="9. Minhas partituras (suas músicas e tabs)">
+      <Sec id="g-obras" title="Minhas partituras (suas músicas e tabs)">
         <p>Transforme qualquer música sua em exercício de leitura — com os mesmos modos acima (clicar no braço, tocar no violão, cantar).</p>
         <h3>Criar marcando no braço virtual</h3>
         <ol>
@@ -408,7 +628,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </p>
       </Sec>
 
-      <Sec id="g-ritmo" title="10. Ritmo">
+      <Sec id="g-ritmo" title="Ritmo">
         <ol>
           <li>
             Antes de tudo, clique <strong>Calibrar latência</strong> e siga as instruções (bata o Espaço junto com os cliques). Faça uma vez em cada computador/fone.
@@ -433,7 +653,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ol>
       </Sec>
 
-      <Sec id="g-int" title="11. Intervalos">
+      <Sec id="g-int" title="Intervalos">
         <ul>
           <li>
             <strong>Pauta → nome</strong>: vê duas notas e diz o intervalo — primeiro o número (teclas <kbd>2</kbd>–<kbd>8</kbd>), depois a qualidade (maior,
@@ -447,7 +667,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ul>
       </Sec>
 
-      <Sec id="g-acordes" title="12. Acordes e harmonia">
+      <Sec id="g-acordes" title="Acordes e harmonia">
         <ul>
           <li>
             <strong>Construir no braço</strong>: o app pede um acorde (ex. E+). Clique uma nota por corda no braço, depois <strong>Confirmar</strong>. Qualquer
@@ -467,7 +687,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ul>
       </Sec>
 
-      <Sec id="g-ouvido" title="13. Treinamento auditivo (use fone)">
+      <Sec id="g-ouvido" title="Treinamento auditivo (use fone)">
         <ul>
           <li>
             <strong>Grau da escala</strong>: toca uma cadência (para firmar a tonalidade) e depois uma nota — diga qual grau (1 a 7).
@@ -484,7 +704,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ul>
       </Sec>
 
-      <Sec id="g-stats" title="14. Estatísticas">
+      <Sec id="g-stats" title="Estatísticas">
         <ul>
           <li>Números gerais no topo (tentativas, acerto, dias praticados, ritmo, leitura, intervalos).</li>
           <li>
@@ -499,7 +719,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ul>
       </Sec>
 
-      <Sec id="g-mic" title="15. Microfone e afinação (só com violão)">
+      <Sec id="g-mic" title="Microfone e afinação (só com violão)">
         <ol>
           <li>
             <strong>🎤 Ligar microfone</strong> e permita no navegador. Se aparecer “nenhum microfone encontrado”, o computador não tem microfone — responda pelo braço.
@@ -521,7 +741,7 @@ export default function GuidePage({ go }: { go: (p: GuideTarget) => void }) {
         </ol>
       </Sec>
 
-      <Sec id="g-config" title="16. Configurações e backup">
+      <Sec id="g-config" title="Configurações e backup">
         <ul>
           <li>
             <strong>Nomenclatura</strong>: Dó-Ré-Mi ou C-D-E; convenção de oitava.
