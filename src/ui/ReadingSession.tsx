@@ -8,6 +8,7 @@ import { melodyMeter, melodyNotes, type Melody } from '../core/melody/melody';
 import { evaluateReading, type ReadingEvaluation } from '../core/melody/sightReading';
 import { beatSize, beatsPer } from '../core/rhythm/rhythm';
 import { pitchName } from '../core/theory/pitch';
+import { preferredSpelling } from '../core/theory/spelling';
 import { db, localDay, type ModuleId, type ReadingSummary } from '../data/db';
 import type { Settings } from '../data/settings';
 import { secs } from './format';
@@ -327,22 +328,28 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
     return { ok, warn, bad };
   }, [liveCodes]);
 
+  // nome curto (sem oitava) da nota que soa num local do braço, como nos flashcards
+  const nameAt = useCallback(
+    (loc: FretLocation) => pitchName(preferredSpelling(soundingAt(loc, inst) - inst.transposition), { naming: settings.naming, withOctave: false }),
+    [inst, settings.naming],
+  );
+
   const fbMarks: Mark[] = useMemo(() => {
     if (mode === 'static') {
       const last = statuses[statuses.length - 1];
       const out: Mark[] = [];
       if (last) {
         const exp = notes[statuses.length - 1]!;
-        if (last.loc) out.push({ loc: last.loc, kind: last.status === 'ok' ? 'correct' : 'wrong' });
+        if (last.loc) out.push({ loc: last.loc, kind: last.status === 'ok' ? 'correct' : 'wrong', label: nameAt(last.loc) });
         if (last.status !== 'ok') out.push({ loc: melody.fingering.notes[statuses.length - 1]!.loc, kind: 'valid', label: pitchName(exp.pitch!, { naming: settings.naming, withOctave: false }) });
       }
       if (phase === 'done') return melody.fingering.notes.map((fn) => ({ loc: fn.loc, kind: 'valid' as const, label: String(fn.finger) }));
       return out;
     }
-    if (lastClick && phase === 'run') return [{ loc: lastClick.loc, kind: lastClick.ok ? 'correct' : 'wrong' }];
+    if (lastClick && phase === 'run') return [{ loc: lastClick.loc, kind: lastClick.ok ? 'correct' : 'wrong', label: nameAt(lastClick.loc) }];
     if (phase === 'done') return melody.fingering.notes.map((fn) => ({ loc: fn.loc, kind: 'valid' as const, label: String(fn.finger) }));
     return [];
-  }, [mode, statuses, notes, melody.fingering.notes, phase, lastClick, settings.naming]);
+  }, [mode, statuses, notes, melody.fingering.notes, phase, lastClick, settings.naming, nameAt]);
 
   const beatNow = cursorUnits === null ? null : Math.floor(cursorUnits / unitsPerBeat);
   // nome da nota da vez (opcional: ver para conferir, esconder para forçar a memória)
@@ -403,7 +410,7 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
             </button>
           )}
           <button type="button" className="btn-ghost" aria-pressed={showName} title="Mostra ou esconde o nome da nota da vez" onClick={() => setShowName((v) => !v)}>
-            {showName ? '🙈 Esconder nome da nota' : '👁 Mostrar nome da nota'}
+            {showName ? '🙈 Esconder nome da nota' : '👀 Mostrar nome da nota'}
           </button>
           {micState.error && <span className="warn small">{micState.error}</span>}
         </div>
