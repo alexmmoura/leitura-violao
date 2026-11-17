@@ -19,6 +19,16 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.1.0 — 17/11/2026
+
+- **Frases (leitura de partituras e solfejo)**: a nota inteira fica colorida ao responder
+  (antes só a haste mudava de cor) e a pauta ficou ~25% maior.
+- **Revisão de notas**: no modo nota a nota, clique numa nota já respondida para ver o que era
+  pedido, o que você marcou e onde ficava no braço.
+- **Legenda das cores** discreta no canto (ⓘ Cores): azul = nota da vez, verde = certa,
+  amarelo = nota certa fora da região (ou fora do tempo, nos modos com metrônomo), vermelho = errada.
+- **Mais nitidez**: linhas da pauta mais grossas; cordas e trastes do braço mais grossos e claros.
+
 ## 1.0.0 — 17/11/2026
 
 Primeira versão numerada. Reúne tudo feito até aqui:

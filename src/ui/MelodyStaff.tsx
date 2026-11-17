@@ -21,14 +21,20 @@ interface Props {
   label?: string;
   /** Ajusta os compassos por linha à largura disponível, para a pauta ficar GRANDE (telas de prática). */
   fit?: boolean;
+  /** Clique numa nota JÁ RESPONDIDA (certa, errada ou amarela): recebe o índice do evento. */
+  onNoteClick?: (eventIndex: number) => void;
+  /** Evento destacado (nota que está sendo revista). */
+  selected?: number | null;
 }
 
 const fontsReady = VexFlow.loadFonts('Bravura', 'Academico').catch(() => undefined);
 const PER_LINE = 4;
 const FIRST_W = 110;
 const MEASURE_W = 230;
+/** Nas telas de prática o compasso é desenhado mais estreito: depois de esticado para a largura da tela, tudo fica ~25% maior. */
+const MEASURE_W_FIT = 180;
 
-export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false }: Props) {
+export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false, onNoteClick, selected = null }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [perLine, setPerLine] = useState(PER_LINE);
@@ -46,19 +52,27 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
   const noteEls = useRef<(SVGElement | null)[]>([]);
   const marksRef = useRef(marks);
   marksRef.current = marks;
+  const clickRef = useRef(onNoteClick);
+  clickRef.current = onNoteClick;
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const applyMarks = () => {
     let current: SVGElement | null = null;
     noteEls.current.forEach((el, i) => {
       if (!el) return;
-      el.classList.remove('mel-current', 'mel-ok', 'mel-bad', 'mel-warn', 'mel-masked');
+      el.classList.remove('mel-current', 'mel-ok', 'mel-bad', 'mel-warn', 'mel-masked', 'mel-clickable', 'mel-selected');
       const mark = marksRef.current?.get(i);
       if (mark) el.classList.add(`mel-${mark}`);
+      const clickable = !!clickRef.current && (mark === 'ok' || mark === 'bad' || mark === 'warn');
+      if (clickable) el.classList.add('mel-clickable');
+      el.style.pointerEvents = clickable ? 'auto' : '';
+      if (i === selectedRef.current) el.classList.add('mel-selected');
       if (mark === 'current') current = el;
     });
     // músicas longas: mantém a nota atual à vista
     (current as SVGElement | null)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
-  useEffect(applyMarks, [marks]);
+  useEffect(applyMarks, [marks, selected, onNoteClick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +86,7 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
         const PER_LINE = perLine; // (sombra a constante: compassos por linha desta pauta)
         const lines = Math.ceil(c.measures / PER_LINE);
         const first = FIRST_W;
-        const per = MEASURE_W;
+        const per = fit ? MEASURE_W_FIT : MEASURE_W;
         const width = first + per * Math.min(PER_LINE, c.measures) + 20;
         const lineH = 150;
         const height = lines * lineH + 10;
@@ -130,7 +144,12 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           new Formatter().joinVoices([voice]).format([voice], w - (stave.getNoteStartX() - stave.getX()) - 20);
           voice.draw(ctx, stave);
           for (const b of beams) b.setContext(ctx).draw();
-          for (const { sn, i } of notes) noteEls.current[i] = sn.getSVGElement() ?? null;
+          for (const { sn, i } of notes) {
+            const g = sn.getSVGElement() ?? null;
+            noteEls.current[i] = g;
+            // só responde quando a nota está marcada como clicável (ver applyMarks)
+            g?.addEventListener('click', () => g.classList.contains('mel-clickable') && clickRef.current?.(i));
+          }
         });
 
         // ligaduras de prolongamento; na troca de linha, duas meias-ligaduras

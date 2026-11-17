@@ -308,7 +308,7 @@ button.wide { min-width: 0; }
 .fb-required { fill: var(--required); }
 .fb-pending { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
 .fb-marker { fill: var(--marker); }
-.fb-fret { stroke: var(--fret); stroke-width: 2.5; }
+.fb-fret { stroke: var(--fret); stroke-width: 3.2; }
 .fb-nut { stroke: var(--nut); stroke-width: 7; }
 .fb-string { stroke: var(--string); }
 .fb-label { fill: var(--muted); font-size: 14px; font-weight: 600; }
@@ -369,7 +369,7 @@ h2 { font-size: 1.15rem; margin: 22px 0 8px; }
   --wood: #0b0b0b;
   --fret: #e6e6e6;
   --nut: #ffffff;
-  --string: #8a8a8a;
+  --string: #cfcfcf;
   --marker: #3a3a3a;
   --window: rgba(158, 197, 255, 0.22);
   --window-ext: rgba(158, 197, 255, 0.1);
@@ -577,3 +577,42 @@ fieldset { border-radius: 16px; }
 .fb-mark { pointer-events: none; }
 .fb-mark.is-correct text, .fb-mark.is-wrong text { fill: var(--bg); }
 .fb-mark text { font-size: 14px; }
+
+/* ---------- Frases: cores visíveis, legenda e revisão de notas ---------- */
+/* a cabeça da nota é um <text> (fonte musical): sem isto só a haste mudava de cor */
+.mel-ok text { fill: var(--ok); }
+.mel-bad text { fill: var(--bad); }
+.mel-warn text { fill: var(--warn); }
+.mel-current text { fill: var(--accent); }
+:root[data-theme='dark'] .mel-current text { fill: #6fb1ff; }
+/* linhas da pauta um pouco mais grossas: mais nítida */
+.melody-host .vf-stave path { stroke-width: 2.2; }
+.melody-host .vf-stem path { stroke-width: 1.8; }
+.mel-clickable { cursor: pointer; }
+.mel-clickable:hover text { filter: brightness(1.35); }
+.mel-selected text { stroke: currentColor; stroke-width: 1.5px; paint-order: stroke; }
+.mel-selected.mel-ok text { stroke: var(--ok); }
+.mel-selected.mel-bad text { stroke: var(--bad); }
+.mel-selected.mel-warn text { stroke: var(--warn); }
+.mel-selected .vf-notehead { filter: drop-shadow(0 0 4px currentColor); }
+/* legenda discreta, no canto: fechada, só um "ⓘ Cores" pequeno */
+.mel-legend { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.78rem; margin: -4px 0 6px; color: var(--muted); }
+.mel-legend summary { cursor: pointer; opacity: 0.7; list-style: none; padding: 2px 6px; border-radius: 6px; }
+.mel-legend summary::-webkit-details-marker { display: none; }
+.mel-legend summary:hover, .mel-legend[open] summary { opacity: 1; }
+.mel-legend-body { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 14px; margin-top: 4px; color: var(--text); }
+.mel-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mel-legend .lg { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.lg-current { background: var(--accent); }
+:root[data-theme='dark'] .lg-current { background: #6fb1ff; }
+.lg-ok { background: var(--ok); }
+.lg-warn { background: var(--warn); }
+.lg-bad { background: var(--bad); }
+.review-box { border: 1px solid var(--border); border-left: 4px solid var(--muted); border-radius: 10px; padding: 10px 14px; margin: 0 auto 12px; max-width: 640px; background: var(--surface-2); }
+.review-box.is-ok { border-left-color: var(--ok); }
+.review-box.is-bad { border-left-color: var(--bad); }
+.review-box.is-warn { border-left-color: var(--warn); }
+.review-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.review-box .explain { margin-bottom: 0; }
+.review-box .explain-row.is-yours dt { color: var(--bad); }
+.review-box.is-ok .explain-row.is-yours dt { color: var(--ok); }

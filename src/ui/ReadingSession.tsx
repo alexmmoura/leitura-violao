@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { audioContext, eventToAudioTime, scheduleClicks, type ClickPlan } from '../audio/metronome';
-import { locationLabel } from '../core/exercise/explain';
+import { locationLabel, staffPlace } from '../core/exercise/explain';
 import { soundingAt, type FretLocation, type Instrument } from '../core/instrument/instrument';
 import { inPosition, positionLabel } from '../core/instrument/position';
 import { median } from '../core/learning/metrics';
@@ -108,6 +108,8 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
   const [k, setK] = useState(0);
   const [statuses, setStatuses] = useState<{ status: Status; loc: FretLocation | null; ms: number }[]>([]);
   const noteShownAt = useRef(performance.now());
+  /** Nota já respondida que está sendo revista (índice da NOTA), ou null. */
+  const [review, setReview] = useState<number | null>(null);
 
   // ---------- contínuo / violão ----------
   const [cursorUnits, setCursorUnits] = useState<number | null>(null);
@@ -176,6 +178,7 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
     const ms = Math.max(0, atPerf - noteShownAt.current);
     const next = [...statuses, { status, loc, ms }];
     setStatuses(next);
+    setReview(null);
     noteShownAt.current = performance.now();
     if (k + 1 >= notes.length) {
       const ok = next.filter((s) => s.status === 'ok').length;
@@ -335,6 +338,16 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
   );
 
   const fbMarks: Mark[] = useMemo(() => {
+    // revendo uma nota já respondida: o que você marcou e onde ela estava
+    if (mode === 'static' && review !== null && statuses[review]) {
+      const st = statuses[review]!;
+      const exp = notes[review]!;
+      const right = melody.fingering.notes[review]!.loc;
+      const out: Mark[] = [];
+      if (st.status !== 'ok') out.push({ loc: right, kind: 'valid', label: pitchName(exp.pitch!, { naming: settings.naming, withOctave: false }) });
+      if (st.loc) out.push({ loc: st.loc, kind: st.status === 'ok' ? 'correct' : 'wrong', label: nameAt(st.loc) });
+      return out;
+    }
     if (mode === 'static') {
       const last = statuses[statuses.length - 1];
       const out: Mark[] = [];
@@ -349,7 +362,18 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
     if (lastClick && phase === 'run') return [{ loc: lastClick.loc, kind: lastClick.ok ? 'correct' : 'wrong', label: nameAt(lastClick.loc) }];
     if (phase === 'done') return melody.fingering.notes.map((fn) => ({ loc: fn.loc, kind: 'valid' as const, label: String(fn.finger) }));
     return [];
-  }, [mode, statuses, notes, melody.fingering.notes, phase, lastClick, settings.naming, nameAt]);
+  }, [mode, statuses, notes, melody.fingering.notes, phase, lastClick, settings.naming, nameAt, review]);
+
+  // clicar numa nota já respondida (modo nota a nota) abre a revisão; clicar de novo fecha
+  const onNoteClick = useCallback(
+    (eventIndex: number) => {
+      const ni = melody.events[eventIndex]?.noteIndex ?? -1;
+      if (ni < 0 || ni >= statuses.length) return;
+      setReview((r) => (r === ni ? null : ni));
+    },
+    [melody.events, statuses.length],
+  );
+  const reviewEvent = review === null ? null : melody.events.findIndex((e) => e.noteIndex === review && !e.tiedFromPrev);
 
   const beatNow = cursorUnits === null ? null : Math.floor(cursorUnits / unitsPerBeat);
   // nome da nota da vez (opcional: ver para conferir, esconder para forçar a memória)
@@ -423,7 +447,28 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
         </div>
       )}
 
-      <MelodyStaff melody={melody} marks={stableMarks} showFingering={phase === 'done'} label="Frase para ler" fit />
+      <MelodyStaff
+        melody={melody}
+        marks={stableMarks}
+        showFingering={phase === 'done' && review === null}
+        label="Frase para ler"
+        fit
+        onNoteClick={mode === 'static' ? onNoteClick : undefined}
+        selected={reviewEvent}
+      />
+      <ColorLegend mode={mode} reviewable={mode === 'static' && statuses.length > 0} />
+      {mode === 'static' && review !== null && statuses[review] && (
+        <ReviewBox
+          index={review}
+          total={notes.length}
+          status={statuses[review]!.status}
+          asked={`${pitchName(notes[review]!.pitch!, { naming: settings.naming, withOctave: false })} (${staffPlace(notes[review]!.pitch!)})`}
+          right={locationLabel(melody.fingering.notes[review]!.loc)}
+          marked={statuses[review]!.loc ? `${locationLabel(statuses[review]!.loc!)} → ${nameAt(statuses[review]!.loc!)}` : null}
+          sameName={!!statuses[review]!.loc && nameAt(statuses[review]!.loc!) === pitchName(notes[review]!.pitch!, { naming: settings.naming, withOctave: false })}
+          onClose={() => setReview(null)}
+        />
+      )}
       {showName && phase === 'run' && <p className="now-note" aria-live="off">{nowName ?? '·'}</p>}
 
       <Fretboard
@@ -469,6 +514,43 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
             .join('; ')}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Legenda das cores da pauta: o amarelo muda de sentido conforme o modo. */
+function ColorLegend({ mode, reviewable }: { mode: ReadingMode; reviewable: boolean }) {
+  return (
+    <details className="mel-legend">
+      <summary title="O que cada cor quer dizer">ⓘ Cores</summary>
+      <div className="mel-legend-body">
+        <span><i className="lg lg-current" /> nota da vez</span>
+        <span><i className="lg lg-ok" /> certa</span>
+        <span><i className="lg lg-warn" /> {mode === 'static' ? 'nota certa, fora da região pedida' : 'nota certa, fora do tempo'}</span>
+        <span><i className="lg lg-bad" /> errada</span>
+        {reviewable && <span className="muted">👆 clique numa nota colorida para rever</span>}
+      </div>
+    </details>
+  );
+}
+
+/** Revisão de uma nota já respondida: o que era pedido, o que você marcou e onde ficava. */
+function ReviewBox({ index, total, status, asked, right, marked, sameName, onClose }: {
+  index: number; total: number; status: Status; asked: string; right: string; marked: string | null; sameName: boolean; onClose: () => void;
+}) {
+  const verdict = status === 'ok' ? '✔ Certa' : status === 'region' ? '≈ Nota certa, mas fora da região pedida' : '✖ Errada';
+  return (
+    <div className={`review-box is-${status === 'ok' ? 'ok' : status === 'region' ? 'warn' : 'bad'}`}>
+      <div className="review-head">
+        <strong>Nota {index + 1} de {total} · {verdict}</strong>
+        <button type="button" className="btn-ghost" onClick={onClose}>Fechar</button>
+      </div>
+      <dl className="explain">
+        <div className="explain-row is-asked"><dt>Pedida</dt><dd>{asked} → {right}</dd></div>
+        <div className="explain-row is-yours"><dt>Você marcou</dt><dd>{marked ?? 'outra nota, pelo microfone'}</dd></div>
+        {status === 'bad' && sameName && <div className="explain-row is-note"><dt>Dica</dt><dd>o nome está certo, mas a oitava não: confira as linhas suplementares.</dd></div>}
+        {status === 'region' && <div className="explain-row is-note"><dt>Dica</dt><dd>o som é o mesmo, mas a frase pedia tocar dentro da região indicada no topo.</dd></div>}
+      </dl>
     </div>
   );
 }

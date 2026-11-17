@@ -154,7 +154,7 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
         const y = stringY(i + 1);
         return (
           <g key={`s${i}`}>
-            <line x1={X(nut - OPEN_W + 4)} x2={X(fretX[n]!)} y1={y} y2={y} className="fb-string" strokeWidth={0.9 + s.gauge * 0.75} />
+            <line x1={X(nut - OPEN_W + 4)} x2={X(fretX[n]!)} y1={y} y2={y} className="fb-string" strokeWidth={1.4 + s.gauge * 1.1} />
             <text x={X(LABEL_W / 2)} y={y + 4} className="fb-label" textAnchor="middle">
               {i + 1}
             </text>

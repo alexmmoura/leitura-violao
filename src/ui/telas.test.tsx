@@ -77,4 +77,13 @@ describe('sessão de leitura de frase', () => {
     expect(out).toContain('👀 Mostrar nome da nota');
     expect(out).toContain('V posição');
   });
+
+  it('tem a legenda das cores (o amarelo muda conforme o modo)', () => {
+    const nota = html(<ReadingSession melody={melody} mode="static" bpm={60} inst={g} settings={DEFAULT_SETTINGS} module="D" onDone={() => {}} />);
+    expect(nota).toContain('mel-legend');
+    expect(nota).toContain('nota da vez');
+    expect(nota).toContain('fora da região pedida');
+    const tempo = html(<ReadingSession melody={melody} mode="continuous" bpm={60} inst={g} settings={DEFAULT_SETTINGS} module="D" onDone={() => {}} />);
+    expect(tempo).toContain('fora do tempo');
+  });
 });
