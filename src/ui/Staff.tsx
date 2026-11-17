@@ -47,6 +47,13 @@ function toneColor(tone: NoteTone | undefined): string | null {
   return v || null;
 }
 
+/** Linhas suplementares em destaque: mais grossas, mais compridas e na cor de realce, para dar para contar. */
+function boldLedger(sn: StaveNote): void {
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || 'currentColor';
+  sn.renderOptions.strokePx = 8;
+  sn.setLedgerLineStyle({ strokeStyle: accent, lineWidth: 2.6 });
+}
+
 export default function Staff({ fifths, notes, onRendered, onPick, chord = false, label }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const pickRef = useRef(onPick);
@@ -76,6 +83,7 @@ export default function Staff({ fifths, notes, onRendered, onPick, chord = false
           // acorde: uma haste, teclas em ordem de altura, acidente por tecla
           const sorted = [...notes].sort((a, b) => spelledToMidi(a.pitch) - spelledToMidi(b.pitch));
           const sn = new StaveNote({ keys: sorted.map((n) => toVexKey(n.pitch)), duration: 'w', clef: 'treble' });
+          boldLedger(sn);
           sorted.forEach((n, i) => {
             if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), i);
           });
@@ -86,6 +94,7 @@ export default function Staff({ fifths, notes, onRendered, onPick, chord = false
         } else if (notes.length > 0) {
           const staveNotes = notes.map((n) => {
             const sn = new StaveNote({ keys: [toVexKey(n.pitch)], duration: 'w', clef: 'treble' });
+            boldLedger(sn);
             if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), 0);
             const color = toneColor(n.tone);
             if (color) sn.setStyle({ fillStyle: color, strokeStyle: color });

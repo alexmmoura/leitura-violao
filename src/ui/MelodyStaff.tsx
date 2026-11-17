@@ -111,6 +111,9 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
               clef: 'treble',
               autoStem: true,
             });
+            // linhas suplementares mais grossas e um pouco mais compridas, para dar para contar
+            sn.renderOptions.strokePx = 5;
+            sn.setLedgerLineStyle({ strokeStyle: 'currentColor', lineWidth: 2.2 });
             if (!e.rest && e.accidental !== null) sn.addModifier(new Accidental(vexAccidental(e.accidental)), 0);
             if (f.dotted) Dot.buildAndAttach([sn], { all: true });
             if (showFingering && !e.rest && e.noteIndex >= 0 && !e.tiedFromPrev) {
