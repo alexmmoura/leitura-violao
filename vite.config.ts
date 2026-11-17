@@ -2,12 +2,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+
+// número da versão (package.json), mostrado em Configurações
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 // PWA / offline — especificação §12.7. Todos os recursos (JS, CSS, fontes musicais
 // embutidas no bundle do VexFlow) são pré-armazenados; nada é buscado em CDN.
 export default defineConfig({
   // caminhos relativos: o app funciona em qualquer pasta de qualquer hospedagem (celular)
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [
     react(),
     VitePWA({
@@ -39,7 +44,7 @@ export default defineConfig({
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
     environment: 'node',
   },
 });

@@ -199,7 +199,7 @@ class MicService {
 export const mic = new MicService();
 
 export function useMicStatus() {
-  return useSyncExternalStore(mic.subscribe, mic.getSnapshot);
+  return useSyncExternalStore(mic.subscribe, mic.getSnapshot, mic.getSnapshot);
 }
 
 /** Recebe notas detectadas enquanto `active`; o callback mais recente é sempre usado. */

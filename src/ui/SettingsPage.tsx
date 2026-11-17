@@ -128,6 +128,8 @@ export default function SettingsPage({ settings, update }: { settings: Settings;
           </div>
           {msg && <p className="small">{msg}</p>}
         </fieldset>
+
+        <p className="muted small">Claves versão {__APP_VERSION__} · o que mudou em cada versão está no arquivo CHANGELOG.md</p>
       </div>
     </section>
   );
