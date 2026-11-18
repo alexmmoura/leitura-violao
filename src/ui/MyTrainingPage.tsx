@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildCurriculum } from '../core/learning/curriculum';
 import { MASTERY_LABEL, MASTERY_ORDER, type MasteryState } from '../core/learning/model';
 import { SessionPlanner, type SlotKind } from '../core/learning/planner';
@@ -30,7 +30,21 @@ interface Summary {
   reviews: number;
 }
 
-export default function MyTrainingPage({ settings, onReview }: { settings: Settings; onReview?: (module: ModuleKey, ids: string[]) => void }) {
+/**
+ * `autoStartMinutes`: começa a sessão sozinho (usado pela "Sessão de hoje");
+ * `onFinished`: chamado ao terminar, em vez de mostrar o resumo.
+ */
+export default function MyTrainingPage({
+  settings,
+  onReview,
+  autoStartMinutes,
+  onFinished,
+}: {
+  settings: Settings;
+  onReview?: (module: ModuleKey, ids: string[]) => void;
+  autoStartMinutes?: number;
+  onFinished?: () => void;
+}) {
   const inst = useMemo(() => makeGuitar({ frets: settings.frets }), [settings.frets]);
   const curriculum = useMemo(() => buildCurriculum(inst), [inst]);
   const { data, reload } = useLearningData(settings.retention);
@@ -102,11 +116,20 @@ export default function MyTrainingPage({ settings, onReview }: { settings: Setti
       const snap = planner.current?.snapshot();
       setRunning(null);
       setSlot(null);
-      if (results.length) setSummary({ results, newIntroduced: snap?.newIntroduced ?? 0, reviews: slotCounts.current.review });
       reload();
+      if (onFinished) return onFinished();
+      if (results.length) setSummary({ results, newIntroduced: snap?.newIntroduced ?? 0, reviews: slotCounts.current.review });
     },
-    [reload],
+    [reload, onFinished],
   );
+
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStartMinutes || !data || autoStarted.current) return;
+    autoStarted.current = true;
+    start(autoStartMinutes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartMinutes, data]);
 
   // Aplicação musical no fim da sessão (§6.9): uma frase na região da etapa atual.
   const [application, setApplication] = useState<{ melody: Melody; key: number } | null>(null);

@@ -19,6 +19,7 @@ import SettingsPage from './SettingsPage';
 import StatsPage from './StatsPage';
 import TheoryPage from './TheoryPage';
 import ToolsPage from './ToolsPage';
+import TodayPage, { TodayCard } from './TodayPage';
 import { RhythmLessonsPage, SolfegeLessonsPage } from './LessonsPage';
 
 /**
@@ -30,6 +31,7 @@ type TabId = 'home' | 'tools' | 'theory' | 'more';
 type PageId =
   | TabId
   | 'guide'
+  | 'today'
   | 'training'
   | 'reading'
   | 'repertoire'
@@ -71,9 +73,9 @@ interface Entry {
 }
 const STUDY: { group: string; items: Entry[] }[] = [
   {
-    group: 'Comece aqui',
+    group: 'Atalhos',
     items: [
-      { id: 'training', icon: '🎯', title: 'Meu treinamento', about: 'Sessão diária de 5 a 30 min: revisões no dia certo e itens novos em ordem.' },
+      { id: 'training', icon: '🎯', title: 'Meu treinamento (notas)', about: 'Só as notas no braço, de 5 a 30 min, com os detalhes do currículo.' },
       { id: 'guide', icon: '🧭', title: 'Como estudar (guia)', about: 'Rotina, ordem de estudo e o passo a passo de cada tela.' },
     ],
   },
@@ -114,7 +116,7 @@ const MORE: Entry[] = [
 
 const PARENT: Partial<Record<PageId, TabId>> = { stats: 'more', mic: 'more', settings: 'more' };
 const tabOf = (p: PageId): TabId => (TABS.some((t) => t.id === p) ? (p as TabId) : (PARENT[p] ?? 'home'));
-const titleOf = (p: PageId) => [...STUDY.flatMap((g) => g.items), ...MORE].find((e) => e.id === p)?.title ?? '';
+const titleOf = (p: PageId) => (p === 'today' ? 'Sessão de hoje' : ([...STUDY.flatMap((g) => g.items), ...MORE].find((e) => e.id === p)?.title ?? ''));
 
 export default function App() {
   const [settings, update] = useSettings();
@@ -203,7 +205,12 @@ export default function App() {
             <span className="back-title">{titleOf(page)}</span>
           </button>
         )}
-        {page === 'home' && <Hub title="Estudar" lead="Escolha o que você deseja praticar." groups={STUDY} go={navigate} />}
+        {page === 'home' && (
+          <Hub title="Estudar" lead="Aperte começar para o treino do dia, ou escolha um exercício abaixo." groups={STUDY} go={navigate}>
+            <TodayCard settings={settings} update={update} onStart={() => navigate('today')} />
+          </Hub>
+        )}
+        {page === 'today' && <TodayPage settings={settings} onExit={() => navigate('home')} />}
         {page === 'more' && <Hub title="Mais" lead="Acompanhamento, microfone e ajustes." groups={[{ group: '', items: MORE }]} go={navigate} />}
         {page === 'tools' && <ToolsPage settings={settings} />}
         {page === 'theory' && <TheoryPage />}
@@ -228,13 +235,14 @@ export default function App() {
   );
 }
 
-function Hub({ title, lead, groups, go }: { title: string; lead: string; groups: { group: string; items: Entry[] }[]; go: (p: PageId) => void }) {
+function Hub({ title, lead, groups, go, children }: { title: string; lead: string; groups: { group: string; items: Entry[] }[]; go: (p: PageId) => void; children?: React.ReactNode }) {
   return (
     <section className="page">
       <header className="page-head">
         <h1>{title}</h1>
         <p className="muted">{lead}</p>
       </header>
+      {children}
       {groups.map((g) => (
         <div key={g.group} className="hub-group">
           {g.group && <h2>{g.group}</h2>}

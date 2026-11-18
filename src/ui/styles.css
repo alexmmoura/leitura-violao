@@ -637,6 +637,31 @@ fieldset { border-radius: 16px; }
   .rep-status { grid-column: 1; justify-self: start; }
 }
 
+/* --- Sessão de hoje (tela inicial) --- */
+.today { display: grid; gap: 12px; margin-bottom: 24px; }
+.today-card { background: var(--surface); border: 1px solid var(--accent); border-radius: 18px; padding: 18px 20px; display: grid; gap: 14px; }
+.today-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.today-head h2 { margin: 0 0 6px; font-size: 1.3rem; }
+.today-play { font-size: 1.1rem; padding: 12px 22px; }
+.today-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.today-list li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; }
+.today-list li.is-done { opacity: 0.6; }
+.today-list li.is-done .today-check { color: var(--ok); font-weight: 700; }
+.today-check { width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; }
+.today-text { display: grid; gap: 2px; min-width: 0; }
+.today-edit { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); border-top: 1px solid var(--border); padding-top: 14px; }
+.today-edit fieldset { display: grid; gap: 8px; align-content: start; }
+.today-edit .level-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.today-week { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.today-week > div { background: var(--surface-2); border-radius: 12px; padding: 10px 14px; display: grid; }
+.today-week .big { font-size: 1.4rem; font-weight: 600; }
+.today-steps { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 8px 0 12px; font-size: 0.85rem; }
+.today-steps li { border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; color: var(--muted); }
+.today-steps li.is-current { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.today-steps li.is-done { border-color: var(--ok); color: var(--ok); }
+.today-changes { padding-left: 20px; }
+@media (max-width: 560px) { .today-week { gap: 6px; } .today-week > div { padding: 8px 10px; } .today-week .big { font-size: 1.15rem; } .today-card { padding: 14px; } }
+
 /* ---------- Partitura em "papel" (Configurações → Aparência) ----------
    Tinta quase preta em fundo creme, como partitura impressa e como nos apps de
    leitura mais usados: o contraste fica máximo também no tema escuro. As cores de

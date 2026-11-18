@@ -19,6 +19,17 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.3.0 — 18/11/2026
+
+- **Sessão de hoje** na tela inicial: o treino do dia já montado (notas, revisões dos outros módulos,
+  leitura de frases, leitura rítmica e uma obra clássica), com um botão para começar.
+- **Editar** a sessão: quanto tempo você tem hoje (5 a 45 min), quais atividades entram e, se quiser,
+  um nível fixo. Dá para pular uma etapa ou parar e continuar mais tarde no mesmo dia.
+- **Dificuldade automática** quando você começa sem editar: a leitura de frases sobe um degrau com
+  3 frases aprovadas seguidas e desce com 2 reprovadas (13 degraus); as obras sobem de nível como no Anki;
+  as lições rítmicas seguem a ordem.
+- **Sua semana**: dias seguidos de estudo, exercícios e acerto dos últimos 7 dias.
+
 ## 1.2.0 — 18/11/2026
 
 - **Obras clássicas (níveis 1–5)**: nova tela com 22 trechos de obras e canções em domínio público

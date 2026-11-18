@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { readingPassed } from '../core/daily/ladder';
 import { audioContext, eventToAudioTime, scheduleClicks, type ClickPlan } from '../audio/metronome';
 import { locationLabel, staffPlace } from '../core/exercise/explain';
 import { soundingAt, type FretLocation, type Instrument } from '../core/instrument/instrument';
@@ -151,7 +152,7 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
 
   const finish = useCallback(
     (summary: ReadingSummary, evaluation: ReadingEvaluation | null, rtMs: number) => {
-      const correct = summary.continuity === null ? summary.notesInTime >= 0.9 : summary.notesInTime >= 0.85 && summary.continuity >= 0.9;
+      const correct = readingPassed(summary);
       // partituras próprias ("obra:…") e obras do repertório ("repertorio:…") já trazem o id do item;
       // as frases inventadas são revisadas pelo MATERIAL ("leitura:…")
       const key = melody.materialKey;

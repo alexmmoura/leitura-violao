@@ -17,6 +17,8 @@ export interface Settings {
   staffPaper: boolean;
   /** Itens novos por dia em "Meu treinamento" (§6.9). */
   newPerDay: number;
+  /** Duração padrão da "Sessão de hoje" (min). */
+  dailyMinutes: number;
   /** Retenção-alvo do FSRS (§10.7). */
   retention: number;
   /** Compensação de latência dos toques (ms), medida na calibração do Módulo E (§15.6). */
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   staffPaper: true,
   newPerDay: 15,
+  dailyMinutes: 15,
   retention: 0.9,
   latencyMs: 0,
   aRef: 440,
