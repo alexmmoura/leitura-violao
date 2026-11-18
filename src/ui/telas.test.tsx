@@ -7,6 +7,8 @@ import { DEFAULT_SETTINGS } from '../data/settings';
 import Fretboard from './Fretboard';
 import GuidePage from './GuidePage';
 import ReadingSession from './ReadingSession';
+import RepertoirePage from './RepertoirePage';
+import { PIECES } from '../core/repertoire/pieces';
 
 /**
  * Testes das TELAS: desenham o componente como HTML e conferem que o que importa
@@ -85,5 +87,17 @@ describe('sessão de leitura de frase', () => {
     expect(nota).toContain('fora da região pedida');
     const tempo = html(<ReadingSession melody={melody} mode="continuous" bpm={60} inst={g} settings={DEFAULT_SETTINGS} module="D" onDone={() => {}} />);
     expect(tempo).toContain('fora do tempo');
+  });
+});
+
+describe('obras clássicas', () => {
+  it('mostra o seletor de nível (automático + 1 a 5) e a lista de obras', () => {
+    const out = html(<RepertoirePage settings={DEFAULT_SETTINGS} />);
+    expect(out).toContain('Obras clássicas');
+    expect(out).toContain('Automático');
+    for (const l of [1, 2, 3, 4, 5]) expect(out).toContain(`Nível ${l}`);
+    expect(out).toContain('Für Elise');
+    expect(out).toContain('Minueto em Sol');
+    expect(count(out, 'class="rep-item')).toBe(PIECES.length);
   });
 });

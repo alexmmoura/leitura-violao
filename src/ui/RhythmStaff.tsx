@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import VexFlow, { Barline, Beam, Dot, Formatter, Fraction, Renderer, Stave, StaveNote, StaveTie, Voice } from 'vexflow/bravura';
 import { figureFor, isCompound, meterLabel, toMeter, type MeterLike, type RhythmEvent } from '../core/rhythm/rhythm';
+import { crispLines, cssColor } from './staffLook';
 
 /**
  * Pauta rítmica (adaptador VexFlow): notas na linha central, fórmula de compasso
@@ -42,7 +43,7 @@ export default function RhythmStaff({ measures, meter, allowIncomplete, highligh
         const ctx = renderer.getContext();
         ctx.setFillStyle('currentColor');
         ctx.setStrokeStyle('currentColor');
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2f5d8a';
+        const accent = cssColor(el, '--accent', '#2f5d8a');
         const unitsPerBeatValue = 16 / m.den;
         const groups = isCompound(m) ? [new Fraction(3, 8)] : undefined;
 
@@ -86,6 +87,7 @@ export default function RhythmStaff({ measures, meter, allowIncomplete, highligh
         const svg = el.querySelector('svg');
         if (svg) {
           svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+          crispLines(svg);
           svg.removeAttribute('width');
           svg.removeAttribute('height');
           svg.style.width = '';

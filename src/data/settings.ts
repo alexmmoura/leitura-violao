@@ -13,6 +13,8 @@ export interface Settings {
   spacing: 'realistic' | 'uniform';
   showNoteNames: boolean;
   theme: 'system' | 'light' | 'dark';
+  /** Partitura em "papel" claro (tinta escura), como partitura impressa — mais nítida também no tema escuro. */
+  staffPaper: boolean;
   /** Itens novos por dia em "Meu treinamento" (§6.9). */
   newPerDay: number;
   /** Retenção-alvo do FSRS (§10.7). */
@@ -39,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   spacing: 'realistic',
   showNoteNames: false,
   theme: 'dark',
+  staffPaper: true,
   newPerDay: 15,
   retention: 0.9,
   latencyMs: 0,

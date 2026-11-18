@@ -4,6 +4,7 @@ import { VOICING_LABEL, type VoicingType } from '../core/harmony/voicing';
 import { KIND_INFO, kindOfKc } from '../core/learning/kinds';
 import { parseKcId, parsePositionKey } from '../core/learning/kc';
 import { parseMaterialKey } from '../core/melody/melody';
+import { pieceById } from '../core/repertoire/pieces';
 import { positionLabel } from '../core/instrument/position';
 import { figureName, LEVEL_LABEL } from '../core/rhythm/rhythm';
 import { INVERSION_LABEL, QUALITY_LABEL, type ChordQuality } from '../core/theory/chords';
@@ -87,6 +88,10 @@ export function describeKc(id: string, naming: Naming = 'latin'): string {
     case 'reading': {
       const c = parseMaterialKey(id.slice('leitura:'.length));
       return c ? `Frases: ${positionLabel(c.region)}${c.shiftTo ? ` → ${positionLabel(c.shiftTo)}` : ''}, ${keyLabel(c.fifths).split(' (')[0]}, ritmo ${c.rhythmLevel || 'só semínimas'}` : 'Leitura de frases';
+    }
+    case 'repertoire': {
+      const p = pieceById(id.slice('repertorio:'.length));
+      return p ? `Obra: ${p.title} (${p.composer}, nível ${p.level})` : 'Obra clássica';
     }
     case 'chord-build': {
       const q = QUALITY_LABEL[parts[1] as ChordQuality] ?? parts[1];

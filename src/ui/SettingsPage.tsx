@@ -116,6 +116,9 @@ export default function SettingsPage({ settings, update }: { settings: Settings;
             <option value="light">Claro</option>
             <option value="dark">Escuro</option>
           </select>
+          <label className="check">
+            <input type="checkbox" checked={settings.staffPaper} onChange={(e) => update({ staffPaper: e.target.checked })} /> Partitura em papel claro (tinta escura, como partitura impressa)
+          </label>
         </fieldset>
 
         <fieldset>

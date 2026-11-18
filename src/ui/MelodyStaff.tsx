@@ -4,6 +4,7 @@ import { melodyMeter, type Melody } from '../core/melody/melody';
 import { figureFor, isCompound, meterLabel } from '../core/rhythm/rhythm';
 import { vexKeySpec } from '../core/theory/keySignature';
 import { toVexKey, vexAccidental } from '../core/theory/pitch';
+import { crispLines } from './staffLook';
 
 /**
  * Pauta de melodias (adaptador VexFlow) — Módulo D.
@@ -31,8 +32,10 @@ const fontsReady = VexFlow.loadFonts('Bravura', 'Academico').catch(() => undefin
 const PER_LINE = 4;
 const FIRST_W = 110;
 const MEASURE_W = 230;
-/** Nas telas de prática o compasso é desenhado mais estreito: depois de esticado para a largura da tela, tudo fica ~25% maior. */
+/** Nas telas de prática o compasso é desenhado mais estreito e a pauta tem TAMANHO FIXO e grande (como nos apps de leitura): */
 const MEASURE_W_FIT = 180;
+/** pixels de tela por unidade do desenho: espaço entre linhas = 10 × 1,5 = 15 px. */
+const FIT_SCALE = 1.5;
 
 export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false, onNoteClick, selected = null }: Props) {
   const host = useRef<HTMLDivElement>(null);
@@ -41,7 +44,8 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
   useEffect(() => {
     const el = host.current;
     if (!fit || !el) return;
-    const calc = () => setPerLine(Math.max(2, Math.min(PER_LINE, Math.floor((el.clientWidth - FIRST_W - 20) / MEASURE_W))));
+    // quantos compassos cabem por linha SEM encolher a pauta (no celular pode ser 1)
+    const calc = () => setPerLine(Math.max(1, Math.min(PER_LINE, Math.floor((el.clientWidth / FIT_SCALE - FIRST_W - 30) / MEASURE_W_FIT))));
     calc();
     const ro = new ResizeObserver(calc);
     ro.observe(el);
@@ -97,7 +101,8 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
         ctx.setStrokeStyle('currentColor');
         const meter = melodyMeter(c);
         const unitsPerBeatValue = 16 / meter.den;
-        const groups = isCompound(meter) ? [new Fraction(3, 8)] : undefined;
+        // agrupamento das barras de colcheia: por tempo (semínima) nos simples; por 3 colcheias nos compostos e no 3/8
+        const groups = isCompound(meter) || (meter.num === 3 && meter.den === 8) ? [new Fraction(3, 8)] : undefined;
         const drawn: { sn: StaveNote; line: number }[] = [];
         noteEls.current = [];
 
@@ -127,7 +132,7 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
             });
             // linhas suplementares mais grossas e um pouco mais compridas, para dar para contar
             sn.renderOptions.strokePx = 5;
-            sn.setLedgerLineStyle({ strokeStyle: 'currentColor', lineWidth: 2.2 });
+            sn.setLedgerLineStyle({ strokeStyle: 'currentColor', lineWidth: 1.6 });
             if (!e.rest && e.accidental !== null) sn.addModifier(new Accidental(vexAccidental(e.accidental)), 0);
             if (f.dotted) Dot.buildAndAttach([sn], { all: true });
             if (showFingering && !e.rest && e.noteIndex >= 0 && !e.tiedFromPrev) {
@@ -140,7 +145,11 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           const units = m.reduce((s, x) => s + x.e.units, 0);
           const voice = new Voice({ numBeats: units / unitsPerBeatValue, beatValue: meter.den });
           voice.addTickables(notes.map((n) => n.sn));
-          const beams = Beam.generateBeams(notes.map((n) => n.sn).filter((n) => !n.isRest()), groups ? { groups } : undefined);
+          // as pausas entram na lista para INTERROMPER a barra (como na partitura impressa)
+          const beams = Beam.generateBeams(
+            notes.map((n) => n.sn),
+            { beamRests: false, ...(groups ? { groups } : {}) },
+          );
           new Formatter().joinVoices([voice]).format([voice], w - (stave.getNoteStartX() - stave.getX()) - 20);
           voice.draw(ctx, stave);
           for (const b of beams) b.setContext(ctx).draw();
@@ -173,8 +182,13 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           svg.removeAttribute('height');
           svg.style.width = '';
           svg.style.height = '';
-          // frases curtas não devem ficar gigantes
-          if (fit) svg.style.maxWidth = `${Math.round(width * 1.5)}px`;
+          // tamanho fixo: a pauta não encolhe nem estica com a janela (fica nítida e sempre do mesmo tamanho)
+          if (fit) {
+            svg.style.width = `${Math.round(width * FIT_SCALE)}px`;
+            svg.style.maxWidth = '100%';
+            svg.classList.add('is-fit');
+          }
+          crispLines(svg);
           svg.setAttribute('fill', 'currentColor');
           svg.setAttribute('stroke', 'currentColor');
           svg.setAttribute('role', 'img');

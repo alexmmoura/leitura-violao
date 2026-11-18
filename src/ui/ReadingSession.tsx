@@ -152,8 +152,10 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
   const finish = useCallback(
     (summary: ReadingSummary, evaluation: ReadingEvaluation | null, rtMs: number) => {
       const correct = summary.continuity === null ? summary.notesInTime >= 0.9 : summary.notesInTime >= 0.85 && summary.continuity >= 0.9;
-      // partituras próprias ("obra:…") têm histórico próprio, fora das revisões do currículo
-      logReading(module, melody.materialKey.startsWith('obra:') ? melody.materialKey : `leitura:${melody.materialKey}`, summary, correct, Math.round(rtMs));
+      // partituras próprias ("obra:…") e obras do repertório ("repertorio:…") já trazem o id do item;
+      // as frases inventadas são revisadas pelo MATERIAL ("leitura:…")
+      const key = melody.materialKey;
+      logReading(module, key.startsWith('obra:') || key.startsWith('repertorio:') ? key : `leitura:${key}`, summary, correct, Math.round(rtMs));
       const o = { summary, evaluation };
       setOutcome(o);
       setPhase('done');

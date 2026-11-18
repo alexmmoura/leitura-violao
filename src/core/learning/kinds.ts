@@ -19,6 +19,7 @@ export type ItemKind =
   | 'rhythm-measure'
   | 'rhythm-exec'
   | 'reading'
+  | 'repertoire'
   | 'chord-build'
   | 'chord-id'
   | 'voice-leading'
@@ -27,7 +28,7 @@ export type ItemKind =
   | 'ear-chord'
   | 'dictation';
 
-export type ModuleKey = 'notes' | 'intervals' | 'rhythm' | 'reading' | 'chords' | 'ear';
+export type ModuleKey = 'notes' | 'intervals' | 'rhythm' | 'reading' | 'repertoire' | 'chords' | 'ear';
 
 export interface KindInfo {
   readonly module: ModuleKey;
@@ -51,6 +52,7 @@ export const KIND_INFO: Readonly<Record<ItemKind, KindInfo>> = {
   'rhythm-measure': { module: 'rhythm', label: 'Compasso completo?', grading: 'timed', fastMs: 3000, slowMs: 9000, masteryMs: 5000, automatedMs: 3000 },
   'rhythm-exec': { module: 'rhythm', label: 'Ritmo executado', grading: 'scored' },
   reading: { module: 'reading', label: 'Leitura de frases', grading: 'scored' },
+  repertoire: { module: 'repertoire', label: 'Obra clássica', grading: 'scored' },
   'chord-build': { module: 'chords', label: 'Acorde: construir', grading: 'plain' },
   'chord-id': { module: 'chords', label: 'Acorde: identificar', grading: 'plain' },
   'voice-leading': { module: 'chords', label: 'Condução de vozes', grading: 'plain' },
@@ -65,6 +67,7 @@ export const MODULE_LABEL: Readonly<Record<ModuleKey, string>> = {
   intervals: 'Intervalos',
   rhythm: 'Ritmo',
   reading: 'Leitura de partituras',
+  repertoire: 'Obras clássicas',
   chords: 'Acordes e harmonia',
   ear: 'Treinamento auditivo',
 };
@@ -79,6 +82,7 @@ const PREFIX: readonly [string, ItemKind][] = [
   ['ritmo:compasso:', 'rhythm-measure'],
   ['ritmo:exec:', 'rhythm-exec'],
   ['leitura:', 'reading'],
+  ['repertorio:', 'repertoire'],
   ['acorde:', 'chord-build'],
   ['ident:', 'chord-id'],
   ['conducao:', 'voice-leading'],

@@ -586,8 +586,8 @@ fieldset { border-radius: 16px; }
 .mel-current text { fill: var(--accent); }
 :root[data-theme='dark'] .mel-current text { fill: #6fb1ff; }
 /* linhas da pauta um pouco mais grossas: mais nítida */
-.melody-host .vf-stave path { stroke-width: 2.2; }
-.melody-host .vf-stem path { stroke-width: 1.8; }
+.melody-host .vf-stave path { stroke-width: 1.6; }
+.melody-host .vf-stem path { stroke-width: 1.5; }
 .mel-clickable { cursor: pointer; }
 .mel-clickable:hover text { filter: brightness(1.35); }
 .mel-selected text { stroke: currentColor; stroke-width: 1.5px; paint-order: stroke; }
@@ -616,3 +616,53 @@ fieldset { border-radius: 16px; }
 .review-box .explain { margin-bottom: 0; }
 .review-box .explain-row.is-yours dt { color: var(--bad); }
 .review-box.is-ok .explain-row.is-yours dt { color: var(--ok); }
+
+/* ---------- Obras clássicas (repertório, níveis 1–5) ---------- */
+.level-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.level-btn { min-width: 40px; padding: 6px 10px; }
+.level-btn.is-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.level-btn.is-on .muted { color: inherit; opacity: 0.8; }
+.rep-list { display: grid; gap: 18px; margin-top: 18px; }
+.rep-level h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.rep-level.is-current h2 { color: var(--accent); }
+.rep-level ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rep-item { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.rep-text { display: grid; gap: 2px; min-width: 0; }
+.rep-status { font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; color: var(--muted); }
+.rep-status.is-due { color: var(--warn); border-color: var(--warn); }
+.rep-status.is-learning { color: var(--bad); border-color: var(--bad); }
+.rep-status.is-scheduled, .rep-status.is-mastered { color: var(--ok); border-color: var(--ok); }
+@media (max-width: 600px) {
+  .rep-item { grid-template-columns: 1fr auto; }
+  .rep-status { grid-column: 1; justify-self: start; }
+}
+
+/* ---------- Partitura em "papel" (Configurações → Aparência) ----------
+   Tinta quase preta em fundo creme, como partitura impressa e como nos apps de
+   leitura mais usados: o contraste fica máximo também no tema escuro. As cores de
+   resposta são redefinidas em tons mais escuros, que leem bem no claro. */
+:root[data-staff='paper'] :is(.melody-host, .staff-host, .rhythm-host) {
+  --text: #161616;
+  --ok: #1d7a44;
+  --bad: #c2402b;
+  --warn: #b06a00;
+  --accent: #1f63d6;
+  --window: rgba(31, 99, 214, 0.12);
+  color: #161616;
+  background: #fbfaf6;
+  border-radius: 12px;
+  padding: 14px 12px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+}
+:root[data-staff='paper'] .melody-host { margin-bottom: 10px; }
+:root[data-staff='paper'] .melody-host .vf-stave path { stroke-width: 1.3; }
+:root[data-staff='paper'] .melody-host .vf-stem path { stroke-width: 1.4; }
+/* as regras do tema escuro pintavam a nota da vez de azul-claro: na folha, azul forte */
+:root[data-staff='paper'] .melody-host .mel-current,
+:root[data-staff='paper'] .melody-host .mel-current path,
+:root[data-staff='paper'] .melody-host .mel-current rect,
+:root[data-staff='paper'] .melody-host .mel-current text { fill: var(--accent); stroke: var(--accent); }
+:root[data-staff='paper'] .melody-host .mel-current text { stroke: none; }
+:root[data-staff='paper'] .mel-selected .vf-notehead { filter: drop-shadow(0 0 3px rgba(31, 99, 214, 0.55)); }
+.melody-host svg.is-fit { min-width: 0 !important; }

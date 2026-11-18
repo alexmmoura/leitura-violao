@@ -19,6 +19,15 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.2.0 — 18/11/2026
+
+- **Obras clássicas (níveis 1–5)**: nova tela com 22 trechos de obras e canções em domínio público
+  (Beethoven, Mozart, Bach/Petzold, Dvořák, Pachelbel, Haydn, Satie, tradicionais), só a melodia, escrita para violão.
+- **Nível escolhido ou automático (tipo Anki)**: cada obra tem agendamento próprio (FSRS): as que você lê bem
+  voltam cada vez mais tarde, as que erra voltam logo; o nível sobe sozinho com 80% do nível aprovado.
+- As revisões de obras vencidas aparecem em **Meu treinamento**.
+- Os mesmos modos da leitura de partituras: nota a nota, contínuo, no violão e solfejo.
+
 ## 1.1.0 — 17/11/2026
 
 - **Frases (leitura de partituras e solfejo)**: a nota inteira fica colorida ao responder

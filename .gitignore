@@ -6,3 +6,6 @@ node_modules
 node/
 *.tsbuildinfo
 .claude/
+
+# icone de teste: fica fora dos commits
+claves-v2.ico

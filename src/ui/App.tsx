@@ -9,6 +9,7 @@ import PositionsPage from './PositionsPage';
 import PracticePage from './PracticePage';
 import RhythmPage from './RhythmPage';
 import ReadingPage from './ReadingPage';
+import RepertoirePage from './RepertoirePage';
 import IntervalsPage from './IntervalsPage';
 import ChordsPage from './ChordsPage';
 import EarPage from './EarPage';
@@ -31,6 +32,7 @@ type PageId =
   | 'guide'
   | 'training'
   | 'reading'
+  | 'repertoire'
   | 'solfege'
   | 'rhythmLessons'
   | 'scores'
@@ -49,6 +51,7 @@ const MODULE_PAGE: Record<ModuleKey, PageId> = {
   intervals: 'intervals',
   rhythm: 'rhythm',
   reading: 'reading',
+  repertoire: 'repertoire',
   chords: 'chords',
   ear: 'ear',
 };
@@ -78,6 +81,7 @@ const STUDY: { group: string; items: Entry[] }[] = [
     group: 'Partitura',
     items: [
       { id: 'reading', icon: '🎼', title: 'Leitura de partituras', about: 'Frases novas a cada vez: clique no braço, toque no violão ou siga o cursor.' },
+      { id: 'repertoire', icon: '🎻', title: 'Obras clássicas (níveis 1–5)', about: 'Trechos de Bach, Mozart, Beethoven e outros: nível escolhido ou automático, tipo Anki.' },
       { id: 'solfege', icon: '🎤', title: 'Solfejo (lições)', about: 'Lições numeradas por tonalidade: cante e o microfone confere.' },
       { id: 'rhythmLessons', icon: '🥁', title: 'Leitura rítmica (lições)', about: '40 ritmos em ordem de dificuldade para bater no tempo.' },
       { id: 'rhythm', icon: '🎲', title: 'Ritmo livre', about: 'Ritmos novos sorteados por nível e reconhecimento de figuras.' },
@@ -126,6 +130,12 @@ export default function App() {
     if (settings.theme === 'system') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.staffPaper) root.setAttribute('data-staff', 'paper');
+    else root.removeAttribute('data-staff');
+  }, [settings.staffPaper]);
 
   // parâmetros do detector acompanham as configurações
   useEffect(() => {
@@ -206,6 +216,7 @@ export default function App() {
         {page === 'stats' && <StatsPage settings={settings} />}
         {page === 'rhythm' && <RhythmPage key={reviewKey('rhythm')} settings={settings} update={update} {...reviewFor('rhythm')} />}
         {page === 'reading' && <ReadingPage key={reviewKey('reading')} settings={settings} {...reviewFor('reading')} />}
+        {page === 'repertoire' && <RepertoirePage key={reviewKey('repertoire')} settings={settings} {...reviewFor('repertoire')} />}
         {page === 'solfege' && <SolfegeLessonsPage settings={settings} />}
         {page === 'rhythmLessons' && <RhythmLessonsPage settings={settings} />}
         {page === 'intervals' && <IntervalsPage key={reviewKey('intervals')} settings={settings} {...reviewFor('intervals')} />}
