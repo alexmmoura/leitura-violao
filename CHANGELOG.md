@@ -19,6 +19,21 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.4.0 — 18/11/2026
+
+- **1.932 obras em domínio público** na tela Obras clássicas: aos 22 trechos escritos à mão somam-se 1.910 melodias
+  baixadas do corpus aberto do music21 — 391 corais de Bach (voz do soprano), O'Neill's Music of Ireland e
+  Ryan's Mammoth Collection (1883). Tonalidades difíceis transpostas para Fá, Dó, Sol, Ré, Lá ou Mi e oitava
+  ajustada ao braço. Ficaram de fora: melodias com quiálteras (ainda não suportadas) e títulos ofensivos da época.
+- Níveis recalibrados (59 / 247 / 1.025 / 308 / 271 obras do nível 1 ao 5); no automático o nível seguinte abre
+  com 10 obras aprovadas (ou 80% do nível, o que for menor).
+- Lista por **abas de nível**, **busca** por obra ou compositor e "mostrar mais"; o acervo carrega à parte
+  (não pesa na abertura do app) e funciona sem internet.
+- **Partitura em "papel"**: tinta preta em fundo creme, como partitura impressa; linhas alinhadas aos pixels
+  (sem borrão); pauta de tamanho fixo e grande; barras de colcheia param nas pausas e agrupam por tempo;
+  anacruse mais estreita. Pode ser desligada em Configurações → Aparência.
+- Importação de MusicXML junta "fim de repetição + anacruse" num compasso só (sem pausas inventadas).
+
 ## 1.3.0 — 18/11/2026
 
 - **Sessão de hoje** na tela inicial: o treino do dia já montado (notas, revisões dos outros módulos,

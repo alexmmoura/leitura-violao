@@ -28,6 +28,10 @@ export interface Piece {
   readonly music: string;
   /** O que este trecho treina. */
   readonly about?: string;
+  /** De onde veio (obras baixadas do acervo). */
+  readonly source?: string;
+  /** Transposição para o violão em semitons (0/ausente = tonalidade original). */
+  readonly semitones?: number;
 }
 
 export const LEVELS: readonly Level[] = [1, 2, 3, 4, 5];
@@ -307,7 +311,18 @@ export const PIECES: readonly Piece[] = [
   },
 ];
 
-export const pieceById = (id: string): Piece | undefined => PIECES.find((p) => p.id === id);
+export const pieceById = (id: string, extra: readonly Piece[] = []): Piece | undefined => PIECES.find((p) => p.id === id) ?? extra.find((p) => p.id === id);
+
+/**
+ * Acervo baixado (corais de Bach e coleções de melodias tradicionais em domínio
+ * público, convertidos por tools/importar-repertorio.ts). Carregado à parte, só
+ * quando a tela de obras abre, para não pesar no início do app.
+ */
+let acervo: Promise<Piece[]> | null = null;
+export function loadAcervo(): Promise<Piece[]> {
+  acervo ??= import('./acervo.json').then((m) => (m.default as unknown as Piece[]).map((p) => ({ ...p, level: p.level as Level })));
+  return acervo;
+}
 
 /** Id do item de aprendizagem (FSRS) de uma obra. */
 export const pieceKcId = (id: string): string => `repertorio:${id}`;

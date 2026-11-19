@@ -33,8 +33,13 @@ export interface PieceState {
   readonly lastTs: number;
 }
 
-/** Fração de obras aprovadas no nível para o nível seguinte abrir no modo automático. */
+/** Fração de obras aprovadas no nível para o nível seguinte abrir no modo automático… */
 export const LEVEL_UP_SHARE = 0.8;
+/** …mas nunca mais que estas (os níveis do acervo têm centenas de obras). */
+export const LEVEL_UP_MAX = 10;
+
+/** Quantas obras aprovadas abrem o nível seguinte. */
+export const levelUpNeed = (count: number): number => Math.min(Math.ceil(count * LEVEL_UP_SHARE), LEVEL_UP_MAX);
 
 export function pieceStates(model: LearningModel | null, now: number, pieces: readonly Piece[] = PIECES): PieceState[] {
   return pieces.map((piece) => {
@@ -66,7 +71,7 @@ export function autoLevel(states: readonly PieceState[]): Level {
     const here = states.filter((s) => s.piece.level === level);
     if (here.length === 0) continue;
     const ok = here.filter((s) => s.passed).length;
-    if (ok / here.length < LEVEL_UP_SHARE) return level;
+    if (ok < levelUpNeed(here.length)) return level;
   }
   return 5;
 }

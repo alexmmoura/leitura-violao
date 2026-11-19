@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import VexFlow, { Accidental, Annotation, AnnotationVerticalJustify, Barline, Beam, Dot, Formatter, Fraction, Renderer, Stave, StaveNote, StaveTie, Voice } from 'vexflow/bravura';
 import { melodyMeter, type Melody } from '../core/melody/melody';
-import { figureFor, isCompound, meterLabel } from '../core/rhythm/rhythm';
+import { figureFor, isCompound, measureSize, meterLabel } from '../core/rhythm/rhythm';
 import { vexKeySpec } from '../core/theory/keySignature';
 import { toVexKey, vexAccidental } from '../core/theory/pitch';
 import { crispLines } from './staffLook';
@@ -91,7 +91,18 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
         const lines = Math.ceil(c.measures / PER_LINE);
         const first = FIRST_W;
         const per = fit ? MEASURE_W_FIT : MEASURE_W;
-        const width = first + per * Math.min(PER_LINE, c.measures) + 20;
+        // compasso incompleto (anacruse) fica mais estreito, proporcional ao que tem dentro
+        const fullSize = measureSize(melodyMeter(c));
+        const widthOf = (mi: number) => {
+          const u = measures[mi]!.reduce((s, x) => s + x.e.units, 0);
+          return per * Math.max(0.45, Math.min(1, u / fullSize));
+        };
+        let width = 0;
+        for (let mi = 0; mi < c.measures; mi++) {
+          const col = mi % PER_LINE;
+          const lineW = Array.from({ length: Math.min(PER_LINE, c.measures - (mi - col)) }, (_, k) => widthOf(mi - col + k)).reduce((a, b) => a + b, 0);
+          width = Math.max(width, first + lineW + 20);
+        }
         const lineH = 150;
         const height = lines * lineH + 10;
         const renderer = new Renderer(el, Renderer.Backends.SVG);
@@ -111,8 +122,10 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           const col = mi % PER_LINE;
           const isFirst = col === 0;
           // o 1º compasso de cada linha é mais largo (clave e armadura)
-          const x = isFirst ? 10 : 10 + first + per * col;
-          const w = isFirst ? first + per : per;
+          let before = 0;
+          for (let k = mi - col; k < mi; k++) before += widthOf(k);
+          const x = isFirst ? 10 : 10 + first + before;
+          const w = isFirst ? first + widthOf(mi) : widthOf(mi);
           const stave = new Stave(x, 10 + line * lineH, w);
           if (isFirst) {
             stave.addClef('treble', 'default', '8vb').addKeySignature(vexKeySpec(c.fifths));

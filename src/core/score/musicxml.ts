@@ -173,6 +173,16 @@ export function parseMusicXml(text: string, inst: Instrument): ImportedScore {
   if (shift !== base) warnings.push(`Oitava ajustada (${shift > base ? '+' : '−'}${Math.abs(shift - base)}) para a música caber no violão.`);
 
   const size = measureSize(meter);
+  // fim de uma repetição + anacruse da seção seguinte (dois compassos incompletos
+  // que somam um compasso) viram um compasso só, como se lê na partitura
+  const sum = (ms: readonly RawNote[]) => ms.reduce((s, n) => s + n.units, 0);
+  for (let i = 1; i < measures.length - 1; i++) {
+    const a = sum(measures[i]!);
+    const b = sum(measures[i + 1]!);
+    if (a > 0 && b > 0 && a < size && b < size && Math.abs(a + b - size) < 1e-6) {
+      measures.splice(i, 2, [...measures[i]!, ...measures[i + 1]!]);
+    }
+  }
   const out: ScoreNote[][] = measures.map((ms, i) => {
     let notes: ScoreNote[] = ms.map((n) => ({
       units: Math.round(n.units),

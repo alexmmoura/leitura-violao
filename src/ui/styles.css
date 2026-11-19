@@ -691,3 +691,12 @@ fieldset { border-radius: 16px; }
 :root[data-staff='paper'] .melody-host .mel-current text { stroke: none; }
 :root[data-staff='paper'] .mel-selected .vf-notehead { filter: drop-shadow(0 0 3px rgba(31, 99, 214, 0.55)); }
 .melody-host svg.is-fit { min-width: 0 !important; }
+.rep-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rep-tab { padding: 6px 12px; border-radius: 999px; }
+.rep-tab.is-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.rep-tab.is-on .muted { color: inherit; opacity: 0.8; }
+.rep-tab.is-current:not(.is-on) { border-color: var(--accent); }
+.rep-search { margin-left: auto; min-width: 220px; padding: 6px 10px; }
+.rep-more { justify-self: start; margin-top: 8px; }
+@media (max-width: 600px) { .rep-search { margin-left: 0; width: 100%; } }
+:root[data-staff='paper'] :is(.staff-host, .rhythm-host) .vf-stave path { stroke-width: 1.3; }

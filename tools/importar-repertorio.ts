@@ -50,7 +50,12 @@ const slug = (s: string) =>
     .replace(/^-|-$/g, '')
     .slice(0, 40);
 
+const ids = new Set<string>();
+/** Coleções do séc. XIX têm títulos de "minstrel shows" com termos racistas: ficam de fora. */
+const OFFENSIVE = /\b(coons?|darke?y|darkies|nigg\w*|pickaninn\w*|jim crow|mammy|sambo)\b/i;
+
 function add(base: Omit<AcervoPiece, 'level' | 'fifths' | 'music' | 'semitones'>, fifths: number, meter: Meter, measures: ScoreNote[][]) {
+  if (OFFENSIVE.test(base.title)) return fail('título ofensivo');
   const cut = excerpt(measures, meter, 32);
   const g = forGuitar(fifths, cut);
   if (!g) return fail('não cabe no violão');
@@ -66,7 +71,10 @@ function add(base: Omit<AcervoPiece, 'level' | 'fifths' | 'music' | 'semitones'>
   const d = measureDifficulty(g.fifths, g.measures);
   if (d.notes < 8) return fail('curta demais');
   seen.add(music);
-  out.push({ ...base, level: levelOf(g.fifths, meter, d), fifths: g.fifths, meter, music, semitones: g.semitones });
+  let id = base.id;
+  for (let n = 2; ids.has(id); n++) id = `${base.id}-${n}`;
+  ids.add(id);
+  out.push({ ...base, id, level: levelOf(g.fifths, meter, d), fifths: g.fifths, meter, music, semitones: g.semitones });
 }
 
 // ---------- Bach: corais (voz do soprano) ----------
@@ -95,7 +103,9 @@ function abcDir(sub: string, source: string, composerOf: (text: string) => strin
     splitAbcTunes(text).forEach((tune, k) => {
       try {
         const t = parseAbcTune(tune);
-        const title = t.title.replace(/\s*--\s*/g, ' — ');
+        const raw = t.title.replace(/\s*--\s*/g, ' — ').replace(/[.:]+$/, '').replace(/(\w):(\w)/g, '$1$2');
+        // títulos em CAIXA ALTA viram "Caixa De Título"
+        const title = raw === raw.toUpperCase() ? raw.toLowerCase().replace(/(^|[\s(—-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase()) : raw;
         add({ id: `${prefix}-${slug(title)}-${slug(f).slice(0, 12)}-${k}`, title, composer: composerOf(tune), source }, t.fifths, t.meter, t.measures);
       } catch (e) {
         fail(`abc: ${(e as Error).message.slice(0, 50)}`);
@@ -110,7 +120,9 @@ const composerField = (tune: string, fallback: string) => {
 abcDir('ryansMammoth', "Ryan's Mammoth Collection (Boston, 1883) — corpus music21", (t) => composerField(t, 'coleção de 1883'), 'ryan');
 abcDir('oneills1850', "O'Neill's Music of Ireland (1903; 1850 melodias) — corpus music21", (t) => composerField(t, 'Irlanda'), 'oneill');
 
-out.sort((a, b) => a.level - b.level || a.title.localeCompare(b.title));
+// dentro do nível: das mais curtas (mais fáceis) para as mais longas
+const size = (p: AcervoPiece) => p.music.split(' ').length;
+out.sort((a, b) => a.level - b.level || size(a) - size(b) || a.title.localeCompare(b.title));
 writeFileSync(join(process.cwd(), 'src/core/repertoire/acervo.json'), JSON.stringify(out));
 const byLevel = [1, 2, 3, 4, 5].map((l) => `${l}: ${out.filter((p) => p.level === l).length}`).join(' · ');
 console.log(`importadas: ${out.length} (${byLevel})`);

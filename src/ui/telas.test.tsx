@@ -96,8 +96,9 @@ describe('obras clássicas', () => {
     expect(out).toContain('Obras clássicas');
     expect(out).toContain('Automático');
     for (const l of [1, 2, 3, 4, 5]) expect(out).toContain(`Nível ${l}`);
-    expect(out).toContain('Für Elise');
-    expect(out).toContain('Minueto em Sol');
-    expect(count(out, 'class="rep-item')).toBe(PIECES.length);
+    // a lista abre no nível atual (1) e mostra as obras dele
+    expect(out).toContain('Ode à alegria');
+    expect(count(out, 'class="rep-item')).toBe(PIECES.filter((p) => p.level === 1).length);
+    expect(out).toContain('Buscar obra ou compositor');
   });
 });

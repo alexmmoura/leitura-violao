@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { audioContext } from '../audio/metronome';
 import { makeGuitar } from '../core/instrument/instrument';
 import type { Melody } from '../core/melody/melody';
-import { LEVEL_INFO, LEVELS, pieceById, pieceKcId, pieceScore, PIECES, type Level, type Piece } from '../core/repertoire/pieces';
-import { autoLevel, LEVEL_UP_SHARE, nextPiece, PICK_REASON_LABEL, PIECE_STATUS_LABEL, pieceStates, type PickReason, type PieceState } from '../core/repertoire/progression';
+import { LEVEL_INFO, LEVELS, loadAcervo, pieceById, pieceKcId, pieceScore, PIECES, type Level, type Piece } from '../core/repertoire/pieces';
+import { autoLevel, levelUpNeed, nextPiece, PICK_REASON_LABEL, PIECE_STATUS_LABEL, pieceStates, type PickReason, type PieceState } from '../core/repertoire/progression';
 import { isCompound, meterLabel } from '../core/rhythm/rhythm';
 import { buildScoreMelody } from '../core/score/score';
 import { keyLabel } from '../core/theory/keySignature';
@@ -54,9 +54,24 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
   const [error, setError] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const rq = useReviewQueue(review);
+  // obras escritas à mão já de saída; o acervo baixado (quase 2 mil) chega logo depois
+  const [extra, setExtra] = useState<Piece[]>([]);
+  useEffect(() => {
+    let alive = true;
+    loadAcervo()
+      .then((xs) => alive && setExtra(xs))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const all = useMemo(() => [...PIECES, ...extra], [extra]);
+  const [listLevel, setListLevel] = useState<Level | null>(null);
+  const [query, setQuery] = useState('');
+  const [shown, setShown] = useState(30);
 
   const now = Date.now();
-  const states = useMemo(() => pieceStates(data?.model ?? null, now), [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const states = useMemo(() => pieceStates(data?.model ?? null, now, all), [data, all]); // eslint-disable-line react-hooks/exhaustive-deps
   const level = choice === 'auto' ? autoLevel(states) : choice;
   const here = states.filter((s) => s.piece.level === level);
   const passedHere = here.filter((s) => s.passed).length;
@@ -78,7 +93,7 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
   const playNext = (avoid?: string) => {
     // revisões vindas de "Meu treinamento" têm prioridade
     if (rq.active && rq.current) {
-      const p = pieceById(rq.current.slice('repertorio:'.length));
+      const p = pieceById(rq.current.slice('repertorio:'.length), extra);
       if (p) return play(p, 'review');
     }
     const pick = nextPiece(states, choice, avoid);
@@ -130,7 +145,7 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
               <p className="muted small field-hint">
                 {choice === 'auto' ? <>Seu nível agora: <strong>{level}</strong>. </> : null}
                 {LEVEL_INFO[level].about} {passedHere} de {here.length} obras aprovadas
-                {choice === 'auto' && level < 5 ? ` (o nível ${level + 1} abre com ${Math.ceil(here.length * LEVEL_UP_SHARE)})` : ''}.
+                {choice === 'auto' && level < 5 ? ` (o nível ${level + 1} abre com ${levelUpNeed(here.length)})` : ''}.
               </p>
             </fieldset>
             <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={run ? isCompound(run.piece.meter) : false} />
@@ -177,32 +192,70 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
 
       {!focus && (
         <div className="rep-list">
-          {LEVELS.map((l) => (
-            <div key={l} className={`rep-level${l === level ? ' is-current' : ''}`}>
-              <h2>
-                {LEVEL_INFO[l].title} <span className="muted small">— {LEVEL_INFO[l].about}</span>
-              </h2>
-              <ul>
-                {states
-                  .filter((s) => s.piece.level === l)
-                  .map((s) => (
-                    <li key={s.piece.id} className={`rep-item is-${s.status}`}>
+          <div className="rep-tabs" role="tablist" aria-label="Obras por nível">
+            {LEVELS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                role="tab"
+                aria-selected={(listLevel ?? level) === l}
+                className={`rep-tab${(listLevel ?? level) === l ? ' is-on' : ''}${l === level ? ' is-current' : ''}`}
+                onClick={() => {
+                  setListLevel(l);
+                  setShown(30);
+                }}
+              >
+                Nível {l} <span className="muted small">({states.filter((x) => x.piece.level === l).length})</span>
+              </button>
+            ))}
+            <input
+              type="search"
+              className="rep-search"
+              placeholder="Buscar obra ou compositor"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShown(30);
+              }}
+              aria-label="Buscar obra ou compositor"
+            />
+          </div>
+          {(() => {
+            const l = listLevel ?? level;
+            const q = query.trim().toLowerCase();
+            const list = states.filter((x) => (q ? `${x.piece.title} ${x.piece.composer}`.toLowerCase().includes(q) : x.piece.level === l));
+            return (
+              <div className="rep-level">
+                <h2>
+                  {q ? `Busca: ${list.length} obras` : LEVEL_INFO[l].title} {!q && <span className="muted small">— {LEVEL_INFO[l].about}</span>}
+                </h2>
+                <ul>
+                  {list.slice(0, shown).map((x) => (
+                    <li key={x.piece.id} className={`rep-item is-${x.status}`}>
                       <div className="rep-text">
-                        <strong>{s.piece.title}</strong>
+                        <strong>{x.piece.title}</strong>
                         <span className="muted small">
-                          {s.piece.composer} · {keyLabel(s.piece.fifths).split(' (')[0]} · {meterLabel(s.piece.meter)}
-                          {s.piece.about ? ` · ${s.piece.about}` : ''}
+                          {q ? `Nível ${x.piece.level} · ` : ''}
+                          {x.piece.composer} · {keyLabel(x.piece.fifths).split(' (')[0]} · {meterLabel(x.piece.meter)}
+                          {x.piece.semitones && x.piece.semitones % 12 !== 0 ? ' · transposta para o violão' : ''}
+                          {x.piece.about ? ` · ${x.piece.about}` : ''}
                         </span>
                       </div>
-                      <span className={`rep-status is-${s.status}`}>{whenLabel(s, now)}</span>
-                      <button type="button" className="btn-ghost" onClick={() => play(s.piece, 'chosen')}>Tocar</button>
+                      <span className={`rep-status is-${x.status}`}>{whenLabel(x, now)}</span>
+                      <button type="button" className="btn-ghost" onClick={() => play(x.piece, 'chosen')}>Tocar</button>
                     </li>
                   ))}
-              </ul>
-            </div>
-          ))}
+                </ul>
+                {list.length > shown && (
+                  <button type="button" className="btn-ghost rep-more" onClick={() => setShown((n) => n + 30)}>
+                    Mostrar mais ({list.length - shown} restantes)
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           <p className="muted small">
-            {PIECES.length} trechos neste primeiro lote, escritos à mão a partir de obras em domínio público (só a melodia, em altura escrita para violão).
+            {all.length} obras: {PIECES.length} trechos famosos escritos à mão e {extra.length} melodias baixadas do corpus aberto do music21 (corais de Bach; O'Neill's Music of Ireland; Ryan's Mammoth Collection, 1883), todas em domínio público. Só a melodia, em altura escrita para violão; tonalidades difíceis foram transpostas.
           </p>
         </div>
       )}
