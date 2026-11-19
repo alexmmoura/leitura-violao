@@ -21,6 +21,7 @@ import TheoryPage from './TheoryPage';
 import ToolsPage from './ToolsPage';
 import TodayPage, { TodayCard } from './TodayPage';
 import { RhythmLessonsPage, SolfegeLessonsPage } from './LessonsPage';
+import { APK_URL, checkApkUpdate } from '../data/appUpdate';
 
 /**
  * Estrutura: 4 abas (Estudar, Ferramentas, Teoria, Mais). No celular viram barra
@@ -144,6 +145,12 @@ export default function App() {
     mic.configure({ aRef: settings.aRef, toleranceCents: settings.toleranceCents, gate: settings.micGate });
   }, [settings.aRef, settings.toleranceCents, settings.micGate]);
 
+  // app Android: avisa quando sai versão nova do .apk (ele não se atualiza sozinho)
+  const [apkUpdate, setApkUpdate] = useState<string | null>(null);
+  useEffect(() => {
+    void checkApkUpdate(__APP_VERSION__).then(setApkUpdate);
+  }, []);
+
   // §15.9: o microfone desliga ao sair da tela em que foi ligado
   useEffect(() => () => mic.stop(), [page]);
 
@@ -193,6 +200,14 @@ export default function App() {
       </nav>
 
       <main className="content">
+        {apkUpdate && (
+          <div className="apk-update" role="status">
+            Saiu a versão <strong>{apkUpdate}</strong> do Claves.{' '}
+            <a href={APK_URL} target="_blank" rel="noreferrer">Baixar e instalar</a>
+            <span className="muted small"> (instala por cima: seu progresso continua)</span>
+            <button type="button" className="btn-ghost" onClick={() => setApkUpdate(null)} aria-label="Fechar aviso">✕</button>
+          </div>
+        )}
         {(micState.status === 'on' || micState.status === 'test') && (
           <div className="mic-badge" role="status">
             <span className="mic-dot" aria-hidden /> {micState.status === 'test' ? 'Sinal de teste em análise' : 'Microfone ativo'}

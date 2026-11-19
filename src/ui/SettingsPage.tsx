@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { connectMidi } from '../audio/midiInput';
 import { exportBackup, importBackup } from '../data/db';
 import type { Settings } from '../data/settings';
+import { APK_URL, isNativeApp, shareBackupFile } from '../data/appUpdate';
 
 export default function SettingsPage({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -9,10 +10,22 @@ export default function SettingsPage({ settings, update }: { settings: Settings;
 
   const doExport = async () => {
     const data = await exportBackup();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const name = `leitura-violao-backup-${data.exportedAt.slice(0, 10)}.json`;
+    const text = JSON.stringify(data, null, 2);
+    if (isNativeApp()) {
+      // no app Android não há "download": grava o arquivo e abre o Compartilhar (Drive, WhatsApp, e-mail…)
+      try {
+        await shareBackupFile(name, text);
+        setMsg(`Backup pronto: ${data.attempts.length} tentativas. Escolha onde guardar (ex.: Google Drive).`);
+      } catch (e) {
+        setMsg(`Não deu para exportar: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      return;
+    }
+    const blob = new Blob([text], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `leitura-violao-backup-${data.exportedAt.slice(0, 10)}.json`;
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
     setMsg(`Backup exportado: ${data.attempts.length} tentativas.`);
@@ -133,6 +146,12 @@ export default function SettingsPage({ settings, update }: { settings: Settings;
         </fieldset>
 
         <p className="muted small">Claves versão {__APP_VERSION__} · o que mudou em cada versão está no arquivo CHANGELOG.md</p>
+        {!isNativeApp() && (
+          <p className="muted small">
+            Tem Android? Instale o app de verdade (funciona sem internet e abre como app, não como aba):{' '}
+            <a href={APK_URL} target="_blank" rel="noreferrer">baixar Claves.apk</a>. Para levar seu progresso, use Exportar backup aqui e Importar backup no app.
+          </p>
+        )}
       </div>
     </section>
   );

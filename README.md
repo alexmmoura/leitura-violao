@@ -26,9 +26,20 @@ computador: copie esta pasta para lá, abra com `Iniciar.cmd` e use **Importar b
 já traz o Node.js dentro. Depois de mudanças no app, gere um pacote novo com
 `powershell -ExecutionPolicy Bypass -File .\Gerar-pacote-portatil.ps1` (após `npm run build`).
 
-**No celular Android** (o app é um PWA: instala pelo Chrome e funciona offline). Dois caminhos:
+**No celular Android — app de verdade (recomendado)**: no celular, abra
+<https://github.com/alexmmoura/leitura-violao/releases/latest/download/Claves.apk>, abra o arquivo baixado e, quando o
+Android pedir, permita **instalar apps** vindos do navegador (Chrome). O Claves aparece entre os apps, abre em tela cheia,
+funciona sem internet e usa o microfone (o Android pergunta na 1ª vez). Quando sair versão nova o próprio app avisa;
+baixe e instale por cima — o progresso continua. Para trazer o progresso do PC ou do Chrome: **Exportar backup** lá e
+**Importar backup…** no app (no app, Exportar abre o Compartilhar do Android: salve no Drive, por exemplo).
+O .apk é montado de graça pelo GitHub (`.github/workflows/android.yml`, com o [Capacitor](https://capacitorjs.com)) a
+cada versão marcada (`git tag vX.Y.Z` + `git push origin vX.Y.Z`), assinado com a chave guardada em
+`DocumentosClaves-chave-android` (cópia nos *secrets* do repositório: `CLAVES_KEYSTORE_B64` e `CLAVES_KEYSTORE_PASSWORD`).
+**Não perca essa chave**: sem ela, a versão seguinte não instala por cima da anterior.
 
-1. *Completo (recomendado)* — hospedar a pasta `dist/` num endereço **https** gratuito. Ex.: em
+**No celular pelo navegador** (PWA: também instala pelo Chrome e funciona offline). Dois caminhos:
+
+1. *Completo* — hospedar a pasta `dist/` num endereço **https** gratuito. Ex.: em
    [app.netlify.com/drop](https://app.netlify.com/drop), arraste o conteúdo de `Documentos\LeituraNoViolao-para-celular.zip`
    (extraído) e abra o endereço gerado no Chrome do celular → menu ⋮ → **Instalar app / Adicionar à tela inicial**.
    Com https funcionam o microfone e o uso sem internet. O app não envia dados: o progresso fica no próprio celular.

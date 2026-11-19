@@ -19,6 +19,18 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.6.0 — 19/11/2026
+
+- **App Android de verdade (Claves.apk)**: instala como qualquer app, abre em tela cheia (não como aba do navegador),
+  funciona sem internet desde a instalação e usa o microfone. Baixe no celular em
+  https://github.com/alexmmoura/leitura-violao/releases/latest/download/Claves.apk e abra o arquivo.
+- O .apk é montado de graça pelo GitHub a cada versão marcada, com ícone e tela de abertura do Claves, e sempre
+  assinado com a mesma chave — cada versão nova instala por cima da anterior sem perder o progresso.
+- No app, um aviso mostra quando sai versão nova (consulta anônima ao GitHub, no máximo uma vez por dia).
+- No app, **Exportar backup** abre o Compartilhar do Android (Drive, WhatsApp, e-mail…).
+- Configurações (no navegador) ganhou o link para baixar o app Android.
+- Margem para a barra de status do celular no topo das telas.
+
 ## 1.5.0 — 19/11/2026
 
 - **302 obras originais de violão** na tela Obras clássicas: Giuliani (85), Sor (56), Horetzky (48), Carcassi (33),

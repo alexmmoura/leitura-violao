@@ -470,7 +470,7 @@ fieldset { border-radius: 16px; }
   .tabbar .brand, .tabbar .sidebar-foot { display: none; }
   .tab { flex: 1; flex-direction: column; gap: 2px; padding: 4px 2px; font-size: 0.74rem; align-items: center; background: transparent !important; min-height: 48px; }
   .tab-icon { font-size: 1.35rem; }
-  .content { padding: 14px 14px calc(84px + env(safe-area-inset-bottom)); }
+  .content { padding: calc(14px + env(safe-area-inset-top)) 14px calc(84px + env(safe-area-inset-bottom)); }
   .page-head h1, .sub-head h1 { font-size: 1.35rem; }
   .page-head { text-align: center; }
   .tool-list { grid-template-columns: 1fr; }
@@ -702,3 +702,8 @@ fieldset { border-radius: 16px; }
 .rep-more { justify-self: start; margin-top: 8px; }
 @media (max-width: 600px) { .rep-search { margin-left: 0; width: 100%; } }
 :root[data-staff='paper'] :is(.staff-host, .rhythm-host) .vf-stave path { stroke-width: 1.3; }
+
+/* aviso de versão nova do app Android */
+.apk-update { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface); }
+.apk-update a { color: var(--accent); font-weight: 600; }
+.apk-update .btn-ghost { margin-left: auto; }

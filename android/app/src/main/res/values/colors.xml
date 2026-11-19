@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#14233B</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#FF7A59</color>
+    <color name="claves_bg">#14233B</color>
+</resources>

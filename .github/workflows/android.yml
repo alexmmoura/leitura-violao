@@ -1,0 +1,97 @@
+# Monta o app Android (Claves.apk) e publica numa "Release" do GitHub.
+# Roda quando uma versão é marcada (git tag v1.6.0 && git push origin v1.6.0) ou
+# pelo botão "Run workflow" na aba Actions. Grátis em repositório público.
+#
+# A chave de assinatura NÃO está no repositório: vem dos secrets
+# CLAVES_KEYSTORE_B64 (arquivo claves.p12 em base64) e CLAVES_KEYSTORE_PASSWORD.
+# Sempre a mesma chave → o Android instala cada versão nova por cima da anterior.
+name: App Android
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # criar a Release e anexar o .apk
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Versão
+        id: v
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$VER" ]; then
+            echo "::error::A etiqueta ${GITHUB_REF_NAME} não bate com a versão do package.json ($VER)."
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Chave de assinatura
+        env:
+          KEY_B64: ${{ secrets.CLAVES_KEYSTORE_B64 }}
+          KEY_PASS: ${{ secrets.CLAVES_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEY_B64" ] || [ -z "$KEY_PASS" ]; then
+            echo "::error::Faltam os secrets CLAVES_KEYSTORE_B64 e CLAVES_KEYSTORE_PASSWORD (ver README)."
+            exit 1
+          fi
+          echo "$KEY_B64" | base64 -d > "$RUNNER_TEMP/claves.p12"
+
+      - name: Montar o .apk
+        working-directory: android
+        env:
+          CLAVES_KEYSTORE: ${{ runner.temp }}/claves.p12
+          CLAVES_KEYSTORE_PASSWORD: ${{ secrets.CLAVES_KEYSTORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Claves.apk"
+
+      - name: Conferir a assinatura
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs Claves.apk | head -5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Claves-${{ steps.v.outputs.version }}.apk
+          path: Claves.apk
+
+      - name: Publicar na Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ steps.v.outputs.version }}
+        run: |
+          # texto da versão = a seção dela no CHANGELOG.md
+          awk -v v="## $VER " 'index($0, v) == 1 {on=1; next} /^## / && on {exit} on' CHANGELOG.md > notas.md
+          printf '\n---\n**Instalar no Android:** baixe `Claves.apk` abaixo no celular e abra o arquivo (permita instalar apps do navegador quando o Android pedir). Instala por cima da versão anterior, sem perder o progresso.\n' >> notas.md
+          if gh release view "v$VER" >/dev/null 2>&1; then
+            gh release upload "v$VER" Claves.apk --clobber
+          else
+            gh release create "v$VER" Claves.apk --title "Claves $VER" --notes-file notas.md --latest
+          fi
