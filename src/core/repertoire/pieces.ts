@@ -327,6 +327,9 @@ export function loadAcervo(): Promise<Piece[]> {
 /** Id do item de aprendizagem (FSRS) de uma obra. */
 export const pieceKcId = (id: string): string => `repertorio:${id}`;
 
+/** Obra escrita originalmente para violão (Sor, Giuliani, Tárrega… e o Romance anônimo). */
+export const isGuitarOriginal = (p: Piece): boolean => p.id.startsWith('violao-') || p.id === 'romance-anonimo';
+
 /** Partitura da obra (vira uma Melody comum com buildScoreMelody). */
 export function pieceScore(p: Piece): ScoreDef {
   return notationScore(`rep-${p.id}`, p.title, p.fifths, p.meter, p.music);

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { audioContext } from '../audio/metronome';
 import { makeGuitar } from '../core/instrument/instrument';
 import type { Melody } from '../core/melody/melody';
-import { LEVEL_INFO, LEVELS, loadAcervo, pieceById, pieceKcId, pieceScore, PIECES, type Level, type Piece } from '../core/repertoire/pieces';
+import { LEVEL_INFO, LEVELS, loadAcervo, isGuitarOriginal, pieceById, pieceKcId, pieceScore, PIECES, type Level, type Piece } from '../core/repertoire/pieces';
 import { autoLevel, levelUpNeed, nextPiece, PICK_REASON_LABEL, PIECE_STATUS_LABEL, pieceStates, type PickReason, type PieceState } from '../core/repertoire/progression';
 import { isCompound, meterLabel } from '../core/rhythm/rhythm';
 import { buildScoreMelody } from '../core/score/score';
@@ -49,6 +49,20 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
       /* sem armazenamento: só não lembra a escolha */
     }
   }, [choice]);
+  const [onlyGuitar, setOnlyGuitar] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('lv-rep-violao') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('lv-rep-violao', onlyGuitar ? '1' : '0');
+    } catch {
+      /* sem armazenamento: só não lembra a escolha */
+    }
+  }, [onlyGuitar]);
   const [opts, setOpts] = useState<ReadingOptions>(DEFAULT_READING_OPTIONS);
   const [run, setRun] = useState<{ piece: Piece; melody: Melody; reason: Reason; key: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +85,10 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
   const [shown, setShown] = useState(30);
 
   const now = Date.now();
-  const states = useMemo(() => pieceStates(data?.model ?? null, now, all), [data, all]); // eslint-disable-line react-hooks/exhaustive-deps
+  // "só obras de violão" vale para a lista E para a escolha da próxima obra
+  const pool = useMemo(() => (onlyGuitar ? all.filter(isGuitarOriginal) : all), [all, onlyGuitar]);
+  const states = useMemo(() => pieceStates(data?.model ?? null, now, pool), [data, pool]); // eslint-disable-line react-hooks/exhaustive-deps
+  const guitarCount = useMemo(() => all.filter(isGuitarOriginal).length, [all]);
   const level = choice === 'auto' ? autoLevel(states) : choice;
   const here = states.filter((s) => s.piece.level === level);
   const passedHere = here.filter((s) => s.passed).length;
@@ -147,6 +164,10 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
                 {LEVEL_INFO[level].about} {passedHere} de {here.length} obras aprovadas
                 {choice === 'auto' && level < 5 ? ` (o nível ${level + 1} abre com ${levelUpNeed(here.length)})` : ''}.
               </p>
+              <label className="rep-only-guitar">
+                <input type="checkbox" checked={onlyGuitar} onChange={(e) => setOnlyGuitar(e.target.checked)} /> Só obras originais de violão{' '}
+                <span className="muted small">({guitarCount}: Sor, Giuliani, Carcassi, Aguado, Tárrega…)</span>
+              </label>
             </fieldset>
             <ReadingModeFieldset o={opts} set={(p) => setOpts((o) => ({ ...o, ...p }))} compound={run ? isCompound(run.piece.meter) : false} />
           </div>
@@ -237,9 +258,10 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
                         <span className="muted small">
                           {q ? `Nível ${x.piece.level} · ` : ''}
                           {x.piece.composer} · {keyLabel(x.piece.fifths).split(' (')[0]} · {meterLabel(x.piece.meter)}
-                          {x.piece.semitones && x.piece.semitones % 12 !== 0 ? ' · transposta para o violão' : ''}
+                          {isGuitarOriginal(x.piece) ? ' · 🎸 original para violão' : x.piece.semitones && x.piece.semitones % 12 !== 0 ? ' · transposta para o violão' : ''}
                           {x.piece.about ? ` · ${x.piece.about}` : ''}
                         </span>
+                        {x.piece.source?.startsWith('Mutopia') && <span className="muted small rep-credit">{x.piece.source}</span>}
                       </div>
                       <span className={`rep-status is-${x.status}`}>{whenLabel(x, now)}</span>
                       <button type="button" className="btn-ghost" onClick={() => play(x.piece, 'chosen')}>Tocar</button>
@@ -255,7 +277,12 @@ export default function RepertoirePage({ settings, review, onReviewDone }: { set
             );
           })()}
           <p className="muted small">
-            {all.length} obras: {PIECES.length} trechos famosos escritos à mão e {extra.length} melodias baixadas do corpus aberto do music21 (corais de Bach; O'Neill's Music of Ireland; Ryan's Mammoth Collection, 1883), todas em domínio público. Só a melodia, em altura escrita para violão; tonalidades difíceis foram transpostas.
+            {all.length} obras: {PIECES.length} trechos famosos escritos à mão; {extra.length - guitarCount + 1} melodias baixadas do corpus aberto do music21 (corais de Bach;
+            O'Neill's Music of Ireland; Ryan's Mammoth Collection, 1883), em domínio público, com as tonalidades difíceis transpostas para o violão; e{' '}
+            {guitarCount - 1} obras originais de violão (Sor, Giuliani, Carcassi, Aguado, Carulli, Coste, Mertz, Tárrega e outros, todos mortos há mais de 70 anos) nas
+            edições livres do <a href="https://www.mutopiaproject.org" target="_blank" rel="noreferrer">Mutopia Project</a>, na tonalidade original. Delas fica a
+            melodia (a voz de cima; nos duos, o 1º violão), sem baixo e acompanhamento. As edições do Mutopia estão em domínio público ou sob licenças Creative
+            Commons (CC BY / CC BY-SA), creditadas em cada obra; as melodias tiradas delas seguem a mesma licença.
           </p>
         </div>
       )}

@@ -27,8 +27,9 @@ describe('acervo baixado (domínio público)', () => {
     expect(bad).toEqual([]);
   }, 120_000);
 
-  it('tonalidades ficam entre Fá e Mi maior (boas para violão)', async () => {
-    const acervo = await loadAcervo();
+  it('as obras transpostas ficam entre Fá e Mi maior (boas para violão)', async () => {
+    // obras originais de violão ("violao-…") ficam na tonalidade em que foram escritas
+    const acervo = (await loadAcervo()).filter((p) => !p.id.startsWith('violao-'));
     expect(acervo.every((p) => p.fifths >= -1 && p.fifths <= 4)).toBe(true);
   });
 });

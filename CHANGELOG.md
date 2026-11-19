@@ -19,6 +19,21 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.5.0 — 19/11/2026
+
+- **302 obras originais de violão** na tela Obras clássicas: Giuliani (85), Sor (56), Horetzky (48), Carcassi (33),
+  Kníže, Aguado, Bach (Suíte BWV 1006a, Prelúdio BWV 997), Mertz, Carulli, Coste, Matiegka, Tárrega ("Lágrima",
+  "Adelita", "Capricho Árabe") e outros — todos mortos há mais de 70 anos (domínio público no Brasil), nas
+  edições livres do Mutopia Project. Ficam na tonalidade e na oitava originais (clave de Sol com 8).
+- Delas fica a **melodia** (a voz de cima; nos duos de violão, a parte do 1º violão), sem baixo nem acompanhamento.
+  Obras com quiálteras ou fusas param antes do primeiro compasso que as tem; as que as têm logo no começo ficaram
+  de fora (66), assim como os compositores vivos ou mortos há menos de 70 anos.
+- Opção **"Só obras originais de violão"**: vale para a lista e para a escolha da próxima obra (automático tipo Anki).
+- Cada obra do Mutopia mostra o crédito da edição e a licença (domínio público, CC BY ou CC BY-SA).
+- Nomes de compositor das melodias irlandesas sem aspas soltas ("Tradicional (Irlanda; recolhida por F. O'Neill)").
+- Baden Powell, Villa-Lobos, Pixinguinha, Dilermando Reis e outros autores do século XX **não** entram: as obras
+  deles ainda têm direitos autorais.
+
 ## 1.4.0 — 18/11/2026
 
 - **1.932 obras em domínio público** na tela Obras clássicas: aos 22 trechos escritos à mão somam-se 1.910 melodias
