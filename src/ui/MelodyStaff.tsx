@@ -26,6 +26,13 @@ interface Props {
   onNoteClick?: (eventIndex: number) => void;
   /** Evento destacado (nota que está sendo revista). */
   selected?: number | null;
+  /**
+   * Janela que acompanha a leitura: a pauta mostra só 1 ou 2 linhas (a da nota da vez
+   * no topo) e rola sozinha, para o braço ficar logo abaixo sem rolar a página.
+   */
+  follow?: boolean;
+  /** Avisa se a partitura é mais alta que a janela de acompanhamento (true = vale a pena usar). */
+  onTall?: (tall: boolean) => void;
 }
 
 const fontsReady = VexFlow.loadFonts('Bravura', 'Academico').catch(() => undefined);
@@ -36,8 +43,12 @@ const MEASURE_W = 230;
 const MEASURE_W_FIT = 180;
 /** pixels de tela por unidade do desenho: espaço entre linhas = 10 × 1,5 = 15 px. */
 const FIT_SCALE = 1.5;
+/** Altura de cada linha de pauta no desenho (unidades). */
+const LINE_H = 150;
+/** Linhas visíveis na janela de acompanhamento: até 2, ocupando no máximo metade da altura da tela. */
+const followLines = (linePx: number) => Math.max(1, Math.min(2, Math.floor((window.innerHeight * 0.5) / linePx)));
 
-export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false, onNoteClick, selected = null }: Props) {
+export default function MelodyStaff({ melody, marks, showFingering = false, label, fit = false, onNoteClick, selected = null, follow = false, onTall }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [perLine, setPerLine] = useState(PER_LINE);
@@ -60,8 +71,42 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
   clickRef.current = onNoteClick;
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
+  const followRef = useRef(follow);
+  followRef.current = follow;
+  const tallRef = useRef(onTall);
+  tallRef.current = onTall;
+  /** Linha (0, 1, …) de cada evento e medidas do último desenho. */
+  const lineOf = useRef<number[]>([]);
+  const layout = useRef<{ width: number; lines: number } | null>(null);
+  /** Pixels de tela de uma linha de pauta (depende da largura em que o svg foi desenhado). */
+  const linePx = () => {
+    const svg = host.current?.querySelector('svg');
+    const L = layout.current;
+    if (!svg || !L) return null;
+    return (LINE_H * svg.getBoundingClientRect().width) / L.width;
+  };
+  /** Liga/desliga a janela de acompanhamento e rola até a linha da nota da vez. */
+  const applyFollow = (currentIdx: number | null, smooth = true) => {
+    const el = host.current;
+    const px = linePx();
+    const L = layout.current;
+    if (!el || px === null || !L) return;
+    const vis = followLines(px);
+    tallRef.current?.(L.lines > vis);
+    if (!followRef.current || L.lines <= vis) {
+      el.classList.remove('is-follow');
+      el.style.maxHeight = '';
+      return;
+    }
+    const cs = getComputedStyle(el);
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    el.classList.add('is-follow');
+    el.style.maxHeight = `${Math.round(vis * px + (10 * px) / LINE_H + pad)}px`;
+    if (currentIdx !== null) el.scrollTo({ top: (lineOf.current[currentIdx] ?? 0) * px, behavior: smooth ? 'smooth' : 'auto' });
+  };
   const applyMarks = () => {
     let current: SVGElement | null = null;
+    let currentIdx: number | null = null;
     noteEls.current.forEach((el, i) => {
       if (!el) return;
       el.classList.remove('mel-current', 'mel-ok', 'mel-bad', 'mel-warn', 'mel-masked', 'mel-clickable', 'mel-selected');
@@ -71,12 +116,28 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
       if (clickable) el.classList.add('mel-clickable');
       el.style.pointerEvents = clickable ? 'auto' : '';
       if (i === selectedRef.current) el.classList.add('mel-selected');
-      if (mark === 'current') current = el;
+      if (mark === 'current') {
+        current = el;
+        currentIdx = i;
+      }
     });
+    if (followRef.current) {
+      // a janela rola sozinha; sem nota da vez, fica onde o usuário deixou
+      applyFollow(currentIdx);
+      return;
+    }
+    applyFollow(null);
     // músicas longas: mantém a nota atual à vista
     (current as SVGElement | null)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
-  useEffect(applyMarks, [marks, selected, onNoteClick]);
+  useEffect(applyMarks, [marks, selected, onNoteClick, follow]);
+  useEffect(() => {
+    // a altura da janela depende da altura da tela
+    const onResize = () => applyFollow(null, false);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +164,7 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           const lineW = Array.from({ length: Math.min(PER_LINE, c.measures - (mi - col)) }, (_, k) => widthOf(mi - col + k)).reduce((a, b) => a + b, 0);
           width = Math.max(width, first + lineW + 20);
         }
-        const lineH = 150;
+        const lineH = LINE_H;
         const height = lines * lineH + 10;
         const renderer = new Renderer(el, Renderer.Backends.SVG);
         renderer.resize(width, height);
@@ -116,6 +177,8 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
         const groups = isCompound(meter) || (meter.num === 3 && meter.den === 8) ? [new Fraction(3, 8)] : undefined;
         const drawn: { sn: StaveNote; line: number }[] = [];
         noteEls.current = [];
+        lineOf.current = [];
+        layout.current = { width, lines };
 
         measures.forEach((m, mi) => {
           const line = Math.floor(mi / PER_LINE);
@@ -169,6 +232,7 @@ export default function MelodyStaff({ melody, marks, showFingering = false, labe
           for (const { sn, i } of notes) {
             const g = sn.getSVGElement() ?? null;
             noteEls.current[i] = g;
+            lineOf.current[i] = line;
             // só responde quando a nota está marcada como clicável (ver applyMarks)
             g?.addEventListener('click', () => g.classList.contains('mel-clickable') && clickRef.current?.(i));
           }

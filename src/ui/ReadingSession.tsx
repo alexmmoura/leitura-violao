@@ -112,6 +112,14 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
   /** Nota já respondida que está sendo revista (índice da NOTA), ou null. */
   const [review, setReview] = useState<number | null>(null);
 
+  // ---------- janela de acompanhamento da partitura ----------
+  // Antes de começar, a partitura aparece inteira. Depois, se ela for mais alta que a
+  // tela, vira uma janela de 1–2 linhas que acompanha a nota da vez, com o braço logo abaixo.
+  const [tall, setTall] = useState(false);
+  const [begun, setBegun] = useState(false);
+  const [peek, setPeek] = useState(false);
+  const staffBox = useRef<HTMLDivElement>(null);
+
   // ---------- contínuo / violão ----------
   const [cursorUnits, setCursorUnits] = useState<number | null>(null);
   const [lastClick, setLastClick] = useState<{ loc: FretLocation; ok: boolean } | null>(null);
@@ -388,6 +396,13 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
         : melody.events.find((e) => !e.rest && cursorUnits >= e.onsetUnits && cursorUnits < e.onsetUnits + e.units);
   const nowName = nowEvent?.pitch ? pitchName(nowEvent.pitch, { naming: settings.naming, withOctave: false }) : null;
 
+  const reading = mode === 'static' ? begun || statuses.length > 0 : phase === 'run';
+  const following = tall && phase === 'run' && reading && !peek;
+  useEffect(() => {
+    // ao entrar no acompanhamento, deixa pauta + braço na tela
+    if (following) staffBox.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [following]);
+
   return (
     <div className="reading">
       <div className="reading-head">
@@ -450,15 +465,32 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
         </div>
       )}
 
-      <MelodyStaff
-        melody={melody}
-        marks={stableMarks}
-        showFingering={phase === 'done' && review === null}
-        label="Frase para ler"
-        fit
-        onNoteClick={mode === 'static' ? onNoteClick : undefined}
-        selected={reviewEvent}
-      />
+      {tall && phase === 'run' && mode === 'static' && !reading && (
+        <div className="follow-start">
+          <button type="button" className="btn-primary" onClick={() => setBegun(true)}>
+            ▶ Começar a ler
+          </button>
+          <span className="muted small">Leia a partitura inteira antes. Ao começar, ela fica numa janela que acompanha a nota da vez, com o braço logo abaixo.</span>
+        </div>
+      )}
+      <div ref={staffBox} className="reading-staff">
+        <MelodyStaff
+          melody={melody}
+          marks={stableMarks}
+          showFingering={phase === 'done' && review === null}
+          label="Frase para ler"
+          fit
+          onNoteClick={mode === 'static' ? onNoteClick : undefined}
+          selected={reviewEvent}
+          follow={following}
+          onTall={setTall}
+        />
+        {tall && phase === 'run' && reading && (
+          <button type="button" className="btn-ghost follow-toggle" onClick={() => setPeek((v) => !v)}>
+            {peek ? '↥ Voltar a acompanhar a nota da vez' : '↧ Ver partitura inteira'}
+          </button>
+        )}
+      </div>
       <ColorLegend mode={mode} reviewable={mode === 'static' && statuses.length > 0} />
       {mode === 'static' && review !== null && statuses[review] && (
         <ReviewBox

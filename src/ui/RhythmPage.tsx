@@ -163,6 +163,13 @@ export default function RhythmPage({ settings, update, review, onReviewDone }: {
 
 // ---------------------------------------------------------------- execução
 
+/** Campo onde se digita texto (aí o Espaço é do campo, não do ritmo). */
+function isTypingField(t: EventTarget | null): boolean {
+  if (t instanceof HTMLSelectElement || t instanceof HTMLTextAreaElement) return true;
+  if (t instanceof HTMLElement && t.isContentEditable) return true;
+  return t instanceof HTMLInputElement && !['range', 'checkbox', 'radio', 'button'].includes(t.type);
+}
+
 export function Execution({
   level,
   meter,
@@ -248,7 +255,9 @@ export function Execution({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      // só campos de DIGITAR ficam com a tecla; no controle de andamento ou na caixa de
+      // marcar (que ficam com o foco depois de usados com o mouse) o Espaço continua batendo
+      if (isTypingField(e.target)) return;
       if (e.code !== 'Space' && e.key !== 'j' && e.key !== 'f') {
         if (e.key === 'Enter' && phase === 'done') next();
         return;
@@ -304,7 +313,7 @@ export function Execution({
           if (Number.isFinite(t)) taps.current.push(t);
         }}
       >
-        {phase === 'playing' ? (countIn ? 'contagem…' : 'BATA AQUI em cada nota') : phase === 'done' ? 'Repetir' : 'Começar'}
+        {phase === 'playing' ? (countIn ? 'contagem…' : 'BATA AQUI ou tecle Espaço em cada nota') : phase === 'done' ? 'Repetir (Espaço)' : 'Começar (Espaço)'}
       </button>
       {phase === 'idle' && (
         <p className="kbd-hint">

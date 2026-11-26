@@ -19,6 +19,15 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.7.0 — 26/11/2026
+
+- **Partitura que acompanha a leitura**: antes de começar, a partitura aparece inteira (botão **▶ Começar a ler**).
+  Depois, se ela for mais alta que a tela, vira uma janela de até 2 linhas que desce sozinha com a nota da vez,
+  com o braço logo abaixo — sem precisar rolar a página. **Ver partitura inteira** mostra tudo de novo no meio do exercício.
+- **Ritmo pelo Espaço**: o Espaço bate o ritmo mesmo depois de mexer no andamento ou na caixa de subdivisão,
+  e o botão lembra a tecla durante o exercício.
+- **Correção**: na pergunta Braço → pauta, a pauta aparecia cheia de linhas a mais até você confirmar.
+
 ## 1.6.0 — 19/11/2026
 
 - **App Android de verdade (Claves.apk)**: instala como qualquer app, abre em tela cheia (não como aba do navegador),

@@ -181,7 +181,8 @@ td { border-bottom: 1px solid var(--border); padding: 6px 8px; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Pauta clicável e acidentes */
-.staff-pick rect { fill: transparent; cursor: pointer; }
+/* sem contorno: o svg tem stroke="currentColor" e cada faixa clicável virava uma linha a mais */
+.staff-pick rect { fill: transparent; stroke: none; cursor: pointer; }
 .staff-pick rect:hover { fill: var(--window); }
 .acc-bar { display: flex; gap: 8px; align-items: center; justify-content: center; }
 .tag.is-staff { background: var(--window); }
@@ -707,3 +708,9 @@ fieldset { border-radius: 16px; }
 .apk-update { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface); }
 .apk-update a { color: var(--accent); font-weight: 600; }
 .apk-update .btn-ghost { margin-left: auto; }
+
+/* --- Leitura: janela da partitura que acompanha a nota da vez --- */
+.melody-host.is-follow { overflow-y: auto; overscroll-behavior: contain; }
+.reading-staff { display: grid; gap: 6px; scroll-margin-top: 8px; }
+.follow-toggle { justify-self: center; font-size: 0.85rem; padding: 4px 12px; }
+.follow-start { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; text-align: center; }
