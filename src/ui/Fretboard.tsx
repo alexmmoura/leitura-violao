@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { soundingAt, type FretLocation, type Instrument } from '../core/instrument/instrument';
 import type { FretWindow } from '../core/instrument/position';
 import { letterName, alterSymbol } from '../core/theory/pitch';
@@ -48,6 +48,12 @@ const DOUBLE_MARKERS = [12, 24];
 function Fretboard({ inst, settings, heat, window: win, marks = [], requiredString, pendingString, onCellClick, disabled }: Props) {
   const n = inst.frets;
   const nStrings = inst.strings.length;
+  /**
+   * Toque na tela (dedo/caneta): só vale ao SOLTAR sem ter arrastado. Assim, deslizar o
+   * braço para os lados não marca nota. Com o mouse, vale na hora (o tempo conta).
+   */
+  const touch = useRef<{ loc: FretLocation; x: number; y: number; t: number; id: number } | null>(null);
+  const TAP_SLOP = 10;
   const nut = LABEL_W + OPEN_W;
   const boardLen = W - nut - 14;
 
@@ -196,7 +202,25 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
                 height={gap}
                 className="fb-cell"
                 aria-label={f === 0 ? `corda ${i + 1} solta` : `corda ${i + 1}, casa ${f}`}
-                onPointerDown={disabled ? undefined : (e) => onCellClick(loc, e.timeStamp)}
+                onPointerDown={
+                  disabled
+                    ? undefined
+                    : (e) => {
+                        if (e.pointerType === 'mouse') return onCellClick(loc, e.timeStamp);
+                        touch.current = { loc, x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId };
+                      }
+                }
+                onPointerUp={
+                  disabled
+                    ? undefined
+                    : (e) => {
+                        const t = touch.current;
+                        touch.current = null;
+                        if (!t || t.id !== e.pointerId || Math.hypot(e.clientX - t.x, e.clientY - t.y) > TAP_SLOP) return;
+                        onCellClick(t.loc, t.t);
+                      }
+                }
+                onPointerCancel={() => (touch.current = null)}
               />
             );
           }),

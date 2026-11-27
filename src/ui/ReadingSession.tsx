@@ -273,6 +273,12 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
   useEffect(() => {
     if (micOn) micUsed.current = true;
   }, [micOn]);
+  // solfejo: o rastreador entra no modo voz (uma nota cantada = uma resposta)
+  useEffect(() => {
+    if (!sing || !micOn) return;
+    mic.configure({ voice: true });
+    return () => mic.configure({ voice: false });
+  }, [sing, micOn]);
   useMicNotes(onStaticPitch, micOn && mode === 'static' && phase === 'run');
   useMicNotes(
     (n) => {

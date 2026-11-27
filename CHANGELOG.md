@@ -19,6 +19,17 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.7.1 — 27/11/2026
+
+- **Celular — deslizar o braço não marca mais nota**: com o dedo, a nota só vale ao soltar sem ter arrastado.
+- **Celular — Próxima à mão**: depois de responder, o resultado e o botão **Próxima ›** aparecem logo abaixo do braço,
+  sem precisar rolar a tela.
+- **Celular deitado**: pauta e braço cabem juntos na tela; acidentes e Confirmar ficam ao lado da pauta, e a tela se
+  posiciona sozinha no exercício a cada questão.
+- **Solfejo**: o microfone entra num modo voz — uma nota cantada vira uma só resposta (o deslize até a nota, a consoante
+  da sílaba e saltos de oitava do detector não contam mais como notas novas).
+- **Instalar no Windows**: `Instalar-Claves-no-Windows.cmd` cria o atalho do Claves no menu Iniciar e na Área de Trabalho.
+
 ## 1.7.0 — 26/11/2026
 
 - **Partitura que acompanha a leitura**: antes de começar, a partitura aparece inteira (botão **▶ Começar a ler**).

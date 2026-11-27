@@ -65,6 +65,11 @@ const DEFAULT_OCTAVE_CENTER = 4 * 7 + 6; // Si4 escrito: linha central da pauta
 export default function TrainingSession(props: Props) {
   const { inst, settings, fifths, window: win, module, title, total, nextQuestion, sessionConfig, onExit, summary } = props;
   const [question, setQuestion] = useState<SessionQuestion | null>(null);
+  // celular deitado: a cada questão a tela se posiciona no exercício (pauta + braço cabem juntos)
+  const stageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (question && window.matchMedia?.('(orientation: landscape) and (max-height: 520px)').matches) stageRef.current?.scrollIntoView({ block: 'start' });
+  }, [question]);
   const [view, setView] = useState<AnswerView | null>(null);
   const [selected, setSelected] = useState<FretLocation[]>([]);
   const [staffDraft, setStaffDraft] = useState<StaffAnswer | null>(null);
@@ -422,7 +427,7 @@ export default function TrainingSession(props: Props) {
       </header>
 
       <div className="train-main">
-        <div className="train-stage">
+        <div className="train-stage" ref={stageRef}>
           <div className="prompt">{prompt && <span className={`tag${isStaffQ ? ' is-staff' : ''}`}>{prompt}</span>}</div>
           <Staff
             fifths={fifths}
@@ -481,6 +486,15 @@ export default function TrainingSession(props: Props) {
                 </button>
               )}
               {micState.error && <span className="warn small">{micState.error}</span>}
+            </div>
+          )}
+          {view && !finished && (
+            // telas estreitas: o painel de retorno fica lá embaixo; aqui o resultado e o "Próxima" ficam à mão
+            <div className={`next-bar ${view.correct ? 'is-ok' : 'is-bad'}`} aria-hidden>
+              <span className="next-bar-title">{view.correct ? '✔ Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? '≈ Região errada' : '✖ Incorreto'}</span>
+              <button type="button" className="btn-primary" tabIndex={-1} onClick={next}>
+                Próxima ›
+              </button>
             </div>
           )}
           <p className="kbd-hint">

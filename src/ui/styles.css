@@ -714,3 +714,30 @@ fieldset { border-radius: 16px; }
 .reading-staff { display: grid; gap: 6px; scroll-margin-top: 8px; }
 .follow-toggle { justify-self: center; font-size: 0.85rem; padding: 4px 12px; }
 .follow-start { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; text-align: center; }
+
+/* --- celular: "Próxima" logo abaixo do braço (o painel de retorno fica fora da tela) --- */
+.next-bar { display: none; }
+@media (max-width: 1150px) {
+  .next-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; padding: 8px 10px 8px 14px; border-radius: 10px; border: 1px solid var(--border); }
+  .next-bar.is-ok { border-color: var(--ok); }
+  .next-bar.is-bad { border-color: var(--bad); }
+  .next-bar-title { font-weight: 700; }
+  .next-bar.is-ok .next-bar-title { color: var(--ok); }
+  .next-bar.is-bad .next-bar-title { color: var(--bad); }
+  .next-bar .btn-primary { min-width: 130px; padding: 10px 18px; font-size: 1.05rem; }
+}
+/* tela de toque sem teclado: a dica de atalhos só ocupa espaço */
+@media (pointer: coarse) and (hover: none) { .train-stage:not(.rhythm-stage) > .kbd-hint { display: none; } }
+
+/* --- celular deitado (tela baixa): pauta e braço cabem juntos, sem rolar --- */
+@media (orientation: landscape) and (max-height: 520px) {
+  .train-stage { position: relative; padding: 8px 10px; gap: 2px; align-content: start; scroll-margin-top: 4px; }
+  .train-stage > .prompt { position: absolute; top: 12px; left: 16px; z-index: 2; min-height: 0; max-width: 28%; justify-content: flex-start; }
+  .train-stage > .prompt .tag { font-size: 0.8rem; padding: 2px 10px; }
+  .train-stage .staff-host { width: auto; }
+  .train-stage .staff-host svg { width: auto; height: max(150px, calc(100dvh - 222px)); max-width: 100%; }
+  .train-stage .fb-scroll .fretboard { min-width: 860px; }
+  .train-stage > .acc-bar { position: absolute; top: 12px; right: 14px; z-index: 2; flex-direction: column; align-items: stretch; max-width: 26%; }
+  .train-stage > .acc-bar .chip { padding: 6px 14px; }
+  .train-stage > .next-bar { position: absolute; top: 10px; right: 12px; z-index: 2; margin: 0; background: var(--surface); }
+}

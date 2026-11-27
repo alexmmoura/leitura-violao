@@ -108,3 +108,31 @@ describe('rastreador de notas (§15.5)', () => {
     });
   });
 });
+
+describe('rastreador no modo voz (solfejo)', () => {
+  const voice = () => new NoteTracker({ ...DEFAULT_TRACKER, voice: true });
+  const hold = (t0: number, midi: number, n: number, rms = 0.1) => Array.from({ length: n }, (_, i) => frame(t0 + i * HOP, midi, rms));
+
+  it('deslize até a nota (passando por vizinhas) vira um só evento', () => {
+    const frames = [...hold(0, 62, 4), ...hold(0.04, 63, 4), ...hold(0.08, 64, 40)];
+    expect(run(voice(), frames).map((e) => e.midi)).toEqual([64]);
+    expect(run(new NoteTracker(), frames).length).toBeGreaterThan(1); // no violão cada altura conta
+  });
+
+  it('consoante no meio da nota (subida de energia) não vira nota nova; só o silêncio separa', () => {
+    const frames = [...hold(0, 64, 20, 0.02), ...hold(0.2, 64, 20, 0.2), ...hold(0.4, 64, 20, 0.02)];
+    expect(run(voice(), frames)).toHaveLength(1);
+    const again = [...frames, frame(0.6, null, 0), frame(0.61, null, 0), frame(0.62, null, 0), frame(0.63, null, 0), frame(0.64, null, 0), ...hold(0.65, 64, 20)];
+    expect(run(voice(), again)).toHaveLength(2);
+  });
+
+  it('salto de oitava do detector não é nota nova', () => {
+    const frames = [...hold(0, 64, 20), ...hold(0.2, 76, 20), ...hold(0.4, 64, 20)];
+    expect(run(voice(), frames)).toHaveLength(1);
+  });
+
+  it('melodia cantada: cada nota segurada é um evento', () => {
+    const frames = [...hold(0, 60, 20), ...hold(0.2, 62, 20), ...hold(0.4, 64, 20)];
+    expect(run(voice(), frames).map((e) => e.midi)).toEqual([60, 62, 64]);
+  });
+});

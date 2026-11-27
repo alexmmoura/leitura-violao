@@ -39,7 +39,17 @@ export interface TrackerOptions {
   /** Quadros de silêncio que encerram a nota. */
   readonly releaseFrames: number;
   readonly minClarity: number;
+  /**
+   * Voz (solfejo): a voz desliza até a nota, tem consoante no começo da sílaba e o
+   * detector às vezes salta uma oitava. Nesse modo uma nota cantada vira UM evento:
+   * a altura precisa ficar estável por mais tempo, só o silêncio separa duas notas
+   * iguais (a consoante não conta como ataque) e salto de oitava não é nota nova.
+   */
+  readonly voice?: boolean;
 }
+
+/** Quadros estáveis (≈ 10 ms cada) exigidos da voz: ≈ 0,1 s na mesma nota. */
+export const VOICE_STABLE_FRAMES = 10;
 
 export const DEFAULT_TRACKER: TrackerOptions = {
   aRef: 440,
@@ -81,7 +91,7 @@ export class NoteTracker {
     // (e ainda subindo em relação ao quadro anterior — no decaimento não há ataque)
     const floor = this.recentRms.length ? Math.min(...this.recentRms) : 0;
     const prev = this.recentRms[this.recentRms.length - 1] ?? 0;
-    if (f.rms > o.gate * 2 && f.rms > floor * o.attackRatio && f.rms > prev * 1.15) {
+    if (!o.voice && f.rms > o.gate * 2 && f.rms > floor * o.attackRatio && f.rms > prev * 1.15) {
       // novo ataque: a nota anterior acabou; só um candidato formado DEPOIS dele vale
       this.attackT = f.t;
       this.emittedSinceAttack = false;
@@ -119,8 +129,10 @@ export class NoteTracker {
     const c = this.candidate;
     // repetição da mesma nota: só se houve ataque e o candidato nasceu depois dele
     const repeated = !this.emittedSinceAttack && this.attackT !== null && c.startT >= this.attackT - 1e-9;
-    const isNew = c.midi !== this.current || repeated;
-    if (c.count >= o.stableFrames && isNew) {
+    const octaveJump = !!o.voice && this.current !== null && c.midi !== this.current && (c.midi - this.current) % 12 === 0;
+    const isNew = (c.midi !== this.current && !octaveJump) || repeated;
+    const stable = o.voice ? Math.max(o.stableFrames, VOICE_STABLE_FRAMES) : o.stableFrames;
+    if (c.count >= stable && isNew) {
       const sorted = [...c.cents].sort((a, b) => a - b);
       this.current = c.midi;
       this.emittedSinceAttack = true;
