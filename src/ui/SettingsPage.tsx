@@ -2,11 +2,17 @@ import { useRef, useState } from 'react';
 import { connectMidi } from '../audio/midiInput';
 import { exportBackup, importBackup } from '../data/db';
 import type { Settings } from '../data/settings';
-import { APK_URL, isNativeApp, shareBackupFile } from '../data/appUpdate';
+import { APK_URL, checkApkUpdate, isNativeApp, shareBackupFile } from '../data/appUpdate';
 
 export default function SettingsPage({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [upd, setUpd] = useState<'idle' | 'busy' | 'none' | string>('idle');
+  const lookForUpdate = async () => {
+    setUpd('busy');
+    const v = await checkApkUpdate(__APP_VERSION__, { force: true });
+    setUpd(v ?? 'none');
+  };
 
   const doExport = async () => {
     const data = await exportBackup();
@@ -146,6 +152,19 @@ export default function SettingsPage({ settings, update }: { settings: Settings;
         </fieldset>
 
         <p className="muted small">Claves versão {__APP_VERSION__} · o que mudou em cada versão está no arquivo CHANGELOG.md</p>
+        {isNativeApp() && (
+          <div className="actions">
+            <button type="button" onClick={lookForUpdate} disabled={upd === 'busy'}>
+              {upd === 'busy' ? 'Procurando…' : 'Procurar atualização'}
+            </button>
+            {upd === 'none' && <span className="small">Você já está na versão mais nova (ou está sem internet).</span>}
+            {upd !== 'idle' && upd !== 'busy' && upd !== 'none' && (
+              <span className="small">
+                Saiu a versão <strong>{upd}</strong>: <a href={APK_URL}>baixar e instalar</a> (instala por cima: seu progresso continua)
+              </span>
+            )}
+          </div>
+        )}
         {!isNativeApp() && (
           <p className="muted small">
             Tem Android? Instale o app de verdade (funciona sem internet e abre como app, não como aba):{' '}

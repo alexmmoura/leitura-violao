@@ -1,9 +1,9 @@
 import { Capacitor } from '@capacitor/core';
 
 /**
- * App Android (.apk): ele NÃO se atualiza sozinho como o site. Uma vez por dia o
- * app pergunta ao GitHub qual é a versão mais nova publicada e, se for maior que a
- * instalada, mostra um aviso com o link para baixar. A consulta é anônima (não
+ * App Android (.apk): ele NÃO se atualiza sozinho como o site. Ao abrir (e ao voltar
+ * para ele, no máximo a cada 3 h) o app pergunta ao GitHub qual é a versão mais nova
+ * publicada e, se for maior que a instalada, mostra um aviso com o link para baixar. A consulta é anônima (não
  * envia nada do usuário) e, sem internet, simplesmente não aparece aviso.
  */
 export const REPO = 'alexmmoura/leitura-violao';
@@ -11,7 +11,8 @@ export const REPO = 'alexmmoura/leitura-violao';
 export const APK_URL = `https://github.com/${REPO}/releases/latest/download/Claves.apk`;
 const LATEST_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 const CHECK_KEY = 'lv-apk-check';
-const DAY = 24 * 60 * 60 * 1000;
+/** Intervalo mínimo entre duas consultas automáticas. */
+export const CHECK_EVERY_MS = 3 * 60 * 60 * 1000;
 
 /** Rodando dentro do app Android (Capacitor), e não no navegador. */
 export function isNativeApp(): boolean {
@@ -44,12 +45,15 @@ export function isNewer(latest: string, current: string): boolean {
   return false;
 }
 
-/** Versão mais nova publicada, se for maior que a instalada (null se não há, sem internet ou já checou hoje). */
-export async function checkApkUpdate(current: string, now = Date.now()): Promise<string | null> {
+/**
+ * Versão mais nova publicada, se for maior que a instalada (null se não há ou sem internet).
+ * Consultou há menos de 3 h? Usa a resposta guardada — a menos que `force` (botão "Procurar atualização").
+ */
+export async function checkApkUpdate(current: string, { now = Date.now(), force = false }: { now?: number; force?: boolean } = {}): Promise<string | null> {
   if (!isNativeApp()) return null;
   try {
     const last = JSON.parse(localStorage.getItem(CHECK_KEY) ?? 'null') as { at: number; latest: string } | null;
-    if (last && now - last.at < DAY) return isNewer(last.latest, current) ? last.latest : null;
+    if (!force && last && now - last.at < CHECK_EVERY_MS) return isNewer(last.latest, current) ? last.latest : null;
   } catch {
     /* sem armazenamento: checa de novo */
   }

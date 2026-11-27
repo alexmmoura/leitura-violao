@@ -19,6 +19,14 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.7.2 — 27/11/2026
+
+- **App do celular avisa mais rápido quando sai versão nova:** confere a cada 3 horas
+  (antes, uma vez por dia) e também ao voltar para o app, que no celular fica dias
+  aberto em segundo plano.
+- **Botão "Procurar atualização"** em Configurações (só no app Android): confere na hora
+  e, se houver versão nova, mostra o link para baixar e instalar por cima.
+
 ## 1.7.1 — 27/11/2026
 
 - **Celular — deslizar o braço não marca mais nota**: com o dedo, a nota só vale ao soltar sem ter arrastado.

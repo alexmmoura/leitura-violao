@@ -148,7 +148,12 @@ export default function App() {
   // app Android: avisa quando sai versão nova do .apk (ele não se atualiza sozinho)
   const [apkUpdate, setApkUpdate] = useState<string | null>(null);
   useEffect(() => {
-    void checkApkUpdate(__APP_VERSION__).then(setApkUpdate);
+    // no Android o app fica aberto por dias em segundo plano: confere também ao voltar para ele
+    const check = () => void checkApkUpdate(__APP_VERSION__).then((v) => v && setApkUpdate(v));
+    check();
+    const onShow = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onShow);
+    return () => document.removeEventListener('visibilitychange', onShow);
   }, []);
 
   // §15.9: o microfone desliga ao sair da tela em que foi ligado
@@ -203,7 +208,7 @@ export default function App() {
         {apkUpdate && (
           <div className="apk-update" role="status">
             Saiu a versão <strong>{apkUpdate}</strong> do Claves.{' '}
-            <a href={APK_URL} target="_blank" rel="noreferrer">Baixar e instalar</a>
+            <a href={APK_URL}>Baixar e instalar</a>
             <span className="muted small"> (instala por cima: seu progresso continua)</span>
             <button type="button" className="btn-ghost" onClick={() => setApkUpdate(null)} aria-label="Fechar aviso">✕</button>
           </div>
