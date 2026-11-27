@@ -491,13 +491,7 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
           follow={following}
           onTall={setTall}
         />
-        {tall && phase === 'run' && reading && (
-          <button type="button" className="btn-ghost follow-toggle" onClick={() => setPeek((v) => !v)}>
-            {peek ? '↥ Voltar a acompanhar a nota da vez' : '↧ Ver partitura inteira'}
-          </button>
-        )}
       </div>
-      <ColorLegend mode={mode} reviewable={mode === 'static' && statuses.length > 0} />
       {mode === 'static' && review !== null && statuses[review] && (
         <ReviewBox
           index={review}
@@ -520,6 +514,16 @@ export default function ReadingSession({ melody, mode, bpm, inst, settings, modu
         onCellClick={mode === 'static' ? (loc) => onStaticClick(loc) : mode === 'continuous' ? onTimedClick : undefined}
         disabled={phase !== 'run' || mode === 'guitar'}
       />
+
+      {/* pauta e braço em primeiro plano: os controles ficam abaixo deles */}
+      <div className="reading-tools">
+        {tall && phase === 'run' && reading && (
+          <button type="button" className="btn-ghost follow-toggle" onClick={() => setPeek((v) => !v)}>
+            {peek ? '↥ Voltar a acompanhar a nota da vez' : '↧ Ver partitura inteira'}
+          </button>
+        )}
+        <ColorLegend mode={mode} reviewable={mode === 'static' && statuses.length > 0} />
+      </div>
 
       {phase === 'run' && (
         <p className="kbd-hint">

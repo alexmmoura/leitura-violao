@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import VexFlow, { Accidental, Formatter, Renderer, Stave, StaveNote, Voice } from 'vexflow/bravura';
 import { vexKeySpec, type Fifths } from '../core/theory/keySignature';
 import { crispLines, cssColor } from './staffLook';
@@ -31,12 +31,42 @@ interface Props {
   /** Desenha todas as notas empilhadas numa só haste (acorde). */
   chord?: boolean;
   label?: string;
+  /** Algo posto por cima da pauta (ex.: botão "Próxima" depois de responder). */
+  overlay?: ReactNode;
+  /** Mostra sempre a faixa toda (Mi3–Si6), sem ampliar — ex.: questão de escrever na pauta. */
+  fullRange?: boolean;
 }
 
 const fontsReady = VexFlow.loadFonts('Bravura', 'Academico').catch(() => undefined);
 
 const WIDTH = 300;
 const HEIGHT = 190;
+/**
+ * Faixa completa do desenho: do Si6 escrito (com acidente) ao Mi3 escrito (com acidente).
+ * A pauta clicável mostra sempre tudo (todas as alturas precisam estar ao alcance).
+ */
+const FULL_TOP = 18;
+const FULL_BOTTOM = 172;
+/** Altura ocupada pela clave de sol com o "8" embaixo (linhas da pauta: 85 a 125). */
+const CLEF_TOP = 66;
+const CLEF_BOTTOM = 158;
+/** Ampliação máxima (uma nota só dentro da pauta não vira um borrão gigante). */
+const MAX_ZOOM = 2.6;
+/** Celular deitado: a pauta do exercício ocupa toda a largura disponível. */
+const LANDSCAPE = '(orientation: landscape) and (max-height: 520px)';
+
+/**
+ * Tamanho do quadro da pauta (px). A altura é fixa para a tela; o que muda de uma
+ * questão para outra é a ampliação do desenho dentro dele — assim nada "pula".
+ */
+function boxOf(el: HTMLElement): { w: number; h: number } | null {
+  const cs = getComputedStyle(el);
+  const w = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  if (!(w > 0)) return null;
+  const landscape = !!window.matchMedia?.(LANDSCAPE).matches && !!el.closest('.train-stage');
+  const h = landscape ? Math.max(120, window.innerHeight - 236) : Math.round((w * (FULL_BOTTOM - FULL_TOP)) / WIDTH);
+  return { w, h };
+}
 /** Faixa clicável: Mi3 escrito (corda 6 solta) até Si6 escrito. */
 const PICK_FROM = 3 * 7 + 2;
 const PICK_TO = 6 * 7 + 6;
@@ -53,66 +83,111 @@ function boldLedger(sn: StaveNote, color: string): void {
   sn.setLedgerLineStyle({ strokeStyle: color, lineWidth: 2.2 });
 }
 
-export default function Staff({ fifths, notes, onRendered, onPick, chord = false, label }: Props) {
+export default function Staff({ fifths, notes, onRendered, onPick, chord = false, label, overlay, fullRange = false }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
   const [error, setError] = useState<string | null>(null);
   const pickable = !!onPick;
+  const full = pickable || fullRange;
+  // redesenha quando a tela muda de tamanho (ex.: girar o celular)
+  const [screen, setScreen] = useState(() => (typeof window === 'undefined' ? '' : `${window.innerWidth}x${window.innerHeight}`));
+  useEffect(() => {
+    const onResize = () => setScreen(`${window.innerWidth}x${window.innerHeight}`);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     fontsReady.then(() => {
       const el = host.current;
       if (cancelled || !el) return;
-      el.innerHTML = '';
       try {
         const ledgerColor = cssColor(el, '--accent', 'currentColor');
-        const renderer = new Renderer(el, Renderer.Backends.SVG);
-        renderer.resize(WIDTH, HEIGHT);
-        const ctx = renderer.getContext();
-        ctx.setFillStyle('currentColor');
-        ctx.setStrokeStyle('currentColor');
+        const draw = (width: number, height: number) => {
+          el.innerHTML = '';
+          const renderer = new Renderer(el, Renderer.Backends.SVG);
+          renderer.resize(width, height);
+          const ctx = renderer.getContext();
+          ctx.setFillStyle('currentColor');
+          ctx.setStrokeStyle('currentColor');
 
-        const stave = new Stave(10, 45, WIDTH - 20);
-        stave.addClef('treble', 'default', '8vb');
-        stave.addKeySignature(vexKeySpec(fifths));
-        stave.setContext(ctx).draw();
+          const stave = new Stave(10, 45, width - 20);
+          stave.addClef('treble', 'default', '8vb');
+          stave.addKeySignature(vexKeySpec(fifths));
+          stave.setContext(ctx).draw();
 
-        if (notes.length > 0 && chord) {
-          // acorde: uma haste, teclas em ordem de altura, acidente por tecla
-          const sorted = [...notes].sort((a, b) => spelledToMidi(a.pitch) - spelledToMidi(b.pitch));
-          const sn = new StaveNote({ keys: sorted.map((n) => toVexKey(n.pitch)), duration: 'w', clef: 'treble' });
-          boldLedger(sn, ledgerColor);
-          sorted.forEach((n, i) => {
-            if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), i);
-          });
-          const voice = new Voice({ numBeats: 4, beatValue: 4 });
-          voice.addTickables([sn]);
-          new Formatter().joinVoices([voice]).format([voice], WIDTH - 20 - (stave.getNoteStartX() - 10) - 30);
-          voice.draw(ctx, stave);
-        } else if (notes.length > 0) {
-          const staveNotes = notes.map((n) => {
-            const sn = new StaveNote({ keys: [toVexKey(n.pitch)], duration: 'w', clef: 'treble' });
+          if (notes.length > 0 && chord) {
+            // acorde: uma haste, teclas em ordem de altura, acidente por tecla
+            const sorted = [...notes].sort((a, b) => spelledToMidi(a.pitch) - spelledToMidi(b.pitch));
+            const sn = new StaveNote({
+              keys: sorted.map((n) => toVexKey(n.pitch)),
+              duration: 'w',
+              clef: 'treble',
+            });
             boldLedger(sn, ledgerColor);
-            if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), 0);
-            const color = toneColor(el, n.tone);
-            if (color) sn.setStyle({ fillStyle: color, strokeStyle: color });
-            return sn;
-          });
-          const voice = new Voice({ numBeats: 4 * staveNotes.length, beatValue: 4 });
-          voice.addTickables(staveNotes);
-          new Formatter().joinVoices([voice]).format([voice], WIDTH - 20 - (stave.getNoteStartX() - 10) - 30);
-          voice.draw(ctx, stave);
-        }
+            sorted.forEach((n, i) => {
+              if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), i);
+            });
+            const voice = new Voice({ numBeats: 4, beatValue: 4 });
+            voice.addTickables([sn]);
+            new Formatter().joinVoices([voice]).format([voice], width - 20 - (stave.getNoteStartX() - 10) - 30);
+            voice.draw(ctx, stave);
+          } else if (notes.length > 0) {
+            const staveNotes = notes.map((n) => {
+              const sn = new StaveNote({
+                keys: [toVexKey(n.pitch)],
+                duration: 'w',
+                clef: 'treble',
+              });
+              boldLedger(sn, ledgerColor);
+              if (n.accidental !== null) sn.addModifier(new Accidental(vexAccidental(n.accidental)), 0);
+              const color = toneColor(el, n.tone);
+              if (color) sn.setStyle({ fillStyle: color, strokeStyle: color });
+              return sn;
+            });
+            const voice = new Voice({
+              numBeats: 4 * staveNotes.length,
+              beatValue: 4,
+            });
+            voice.addTickables(staveNotes);
+            new Formatter().joinVoices([voice]).format([voice], width - 20 - (stave.getNoteStartX() - 10) - 30);
+            voice.draw(ctx, stave);
+          }
+          return { svg: el.querySelector('svg'), stave };
+        };
 
-        const svg = el.querySelector('svg');
+        let { svg, stave } = draw(WIDTH, HEIGHT);
+        let view = { y: FULL_TOP, w: WIDTH, h: FULL_BOTTOM - FULL_TOP };
+        const box = svg ? boxOf(el) : null;
+        if (svg && box) {
+          // altura que o desenho usa de fato: a clave (com o "8" embaixo) e cada nota com
+          // suas linhas suplementares e acidente; depois, a maior ampliação que cabe no quadro
+          let top = full ? FULL_TOP : CLEF_TOP;
+          let bottom = full ? FULL_BOTTOM : CLEF_BOTTOM;
+          for (const n of notes) {
+            const y = stave.getYForNote(VexFlow.keyProperties(toVexKey(n.pitch), 'treble').line as number);
+            const pad = n.accidental !== null ? 17 : 8;
+            top = Math.min(top, y - pad);
+            bottom = Math.max(bottom, y + pad);
+          }
+          top -= 4;
+          bottom += 4;
+          const minW = stave.getNoteStartX() + (chord ? 1 : Math.max(1, notes.length)) * 42 + 30;
+          const s = Math.min(MAX_ZOOM, box.w / minW, box.h / (bottom - top));
+          const w = Math.round(box.w / s);
+          const h = box.h / s;
+          const y = (top + bottom) / 2 - h / 2;
+          if (w !== WIDTH) ({ svg, stave } = draw(w, Math.max(HEIGHT, Math.ceil(y + h))));
+          view = { y, w, h };
+        }
         if (svg) {
-          svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+          svg.setAttribute('viewBox', `0 ${view.y.toFixed(1)} ${view.w} ${view.h.toFixed(1)}`);
           svg.removeAttribute('width');
           svg.removeAttribute('height');
           svg.style.width = '';
-          svg.style.height = '';
+          svg.style.height = box ? `${box.h}px` : '';
           svg.setAttribute('fill', 'currentColor');
           svg.setAttribute('stroke', 'currentColor');
           svg.setAttribute('role', pickable ? 'group' : 'img');
@@ -153,11 +228,12 @@ export default function Staff({ fifths, notes, onRendered, onPick, chord = false
     return () => {
       cancelled = true;
     };
-  }, [fifths, notes, onRendered, label, pickable, chord]);
+  }, [fifths, notes, onRendered, label, pickable, chord, screen, full]);
 
   return (
     <div className={`staff${pickable ? ' is-pickable' : ''}`}>
       <div ref={host} className="staff-host" />
+      {overlay}
       {error && <p className="staff-error">Erro ao desenhar a pauta: {error}</p>}
     </div>
   );

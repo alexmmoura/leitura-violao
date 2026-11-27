@@ -151,7 +151,16 @@ legend { font-weight: 600; padding: 0 4px; }
 .train-stage { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: grid; gap: 4px; }
 .prompt { min-height: 28px; display: flex; justify-content: center; }
 .tag { background: var(--required); border-radius: 99px; padding: 2px 12px; font-weight: 600; }
-.staff { display: flex; flex-direction: column; align-items: center; }
+.staff { display: flex; flex-direction: column; align-items: center; position: relative; }
+/* "Próxima" sobre a parte de baixo da pauta (aparece só depois de responder) */
+/* só no celular deitado (ver abaixo); em pé fica a barra sob o braço */
+.staff-next { display: none; position: absolute; right: 10px; bottom: 8px; z-index: 2; gap: 8px; align-items: stretch; }
+.staff-next > * { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
+.staff-next .btn-primary { padding: 8px 20px; font-size: 1rem; }
+/* caixinha do resultado: verde ✔, vermelha ✖ (ou ≈ região errada) */
+.result-badge { display: inline-grid; place-items: center; width: 40px; flex: none; min-height: 38px; border-radius: 8px; font-weight: 800; font-size: 1.15rem; color: #fff; }
+.result-badge.is-ok { background: var(--ok); }
+.result-badge.is-bad { background: var(--bad); }
 .staff-host { width: min(100%, 440px); color: var(--text); }
 .staff-host svg { width: 100%; height: auto; display: block; }
 .staff-error { color: var(--bad); }
@@ -161,7 +170,12 @@ legend { font-weight: 600; padding: 0 4px; }
 .feedback { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; min-height: 140px; }
 .feedback.is-ok { border-color: var(--ok); background: var(--ok-soft); }
 .feedback.is-bad { border-color: var(--bad); background: var(--bad-soft); }
-.feedback-title { font-weight: 700; font-size: 1.1rem; margin: 0 0 4px; display: flex; justify-content: space-between; }
+.feedback-title { font-weight: 700; font-size: 1.1rem; margin: 0 0 10px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.feedback-title .feedback-result { justify-self: start; }
+.feedback-title .rt { justify-self: end; }
+.feedback-title .btn-primary { font-size: 1rem; }
+/* o resto do retorno centralizado, alinhado com o cabeçalho */
+.feedback .err-code, .feedback .explain { text-align: center; }
 .rt { font-weight: 400; color: var(--muted); }
 .err-code { margin: 0 0 6px; font-weight: 600; }
 .feedback ul { padding-left: 18px; margin: 6px 0 12px; }
@@ -462,7 +476,9 @@ fieldset { border-radius: 16px; }
 .theory-table td:first-child { font-weight: 600; white-space: nowrap; }
 
 /* braço e pauta: rolam de lado quando a tela é estreita */
-.fb-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* sem barra de rolagem: o braço se arrasta para os lados (dedo ou mouse) */
+.fb-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.fb-scroll::-webkit-scrollbar { display: none; }
 
 /* --- celular --- */
 @media (max-width: 820px) {
@@ -483,7 +499,8 @@ fieldset { border-radius: 16px; }
   .melody-host svg { min-width: 620px; }
   .rhythm-host svg { min-width: 480px; }
   .back-bar { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .back-title { display: inline; color: var(--text); font-weight: 700; margin-left: auto; margin-right: auto; }
+  /* título no centro da TELA (não do espaço que sobra depois de "‹ Estudar") */
+  .back-title { display: inline; color: var(--text); font-weight: 700; position: absolute; left: 50%; transform: translateX(-50%); max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .actions button { flex: 1 1 auto; }
   table { display: block; overflow-x: auto; }
   .mic-badge { position: sticky; top: 0; z-index: 11; }
@@ -712,32 +729,50 @@ fieldset { border-radius: 16px; }
 /* --- Leitura: janela da partitura que acompanha a nota da vez --- */
 .melody-host.is-follow { overflow-y: auto; overscroll-behavior: contain; }
 .reading-staff { display: grid; gap: 6px; scroll-margin-top: 8px; }
-.follow-toggle { justify-self: center; font-size: 0.85rem; padding: 4px 12px; }
+.follow-toggle { font-size: 0.85rem; padding: 4px 12px; }
+.reading-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; }
 .follow-start { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; text-align: center; }
 
-/* --- celular: "Próxima" logo abaixo do braço (o painel de retorno fica fora da tela) --- */
-.next-bar { display: none; }
-@media (max-width: 1150px) {
-  .next-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; padding: 8px 10px 8px 14px; border-radius: 10px; border: 1px solid var(--border); }
-  .next-bar.is-ok { border-color: var(--ok); }
-  .next-bar.is-bad { border-color: var(--bad); }
-  .next-bar-title { font-weight: 700; }
-  .next-bar.is-ok .next-bar-title { color: var(--ok); }
-  .next-bar.is-bad .next-bar-title { color: var(--bad); }
-  .next-bar .btn-primary { min-width: 130px; padding: 10px 18px; font-size: 1.05rem; }
-}
 /* tela de toque sem teclado: a dica de atalhos só ocupa espaço */
 @media (pointer: coarse) and (hover: none) { .train-stage:not(.rhythm-stage) > .kbd-hint { display: none; } }
 
 /* --- celular deitado (tela baixa): pauta e braço cabem juntos, sem rolar --- */
 @media (orientation: landscape) and (max-height: 520px) {
-  .train-stage { position: relative; padding: 8px 10px; gap: 2px; align-content: start; scroll-margin-top: 4px; }
-  .train-stage > .prompt { position: absolute; top: 12px; left: 16px; z-index: 2; min-height: 0; max-width: 28%; justify-content: flex-start; }
-  .train-stage > .prompt .tag { font-size: 0.8rem; padding: 2px 10px; }
-  .train-stage .staff-host { width: auto; }
-  .train-stage .staff-host svg { width: auto; height: max(150px, calc(100dvh - 222px)); max-width: 100%; }
-  .train-stage .fb-scroll .fretboard { min-width: 860px; }
-  .train-stage > .acc-bar { position: absolute; top: 12px; right: 14px; z-index: 2; flex-direction: column; align-items: stretch; max-width: 26%; }
-  .train-stage > .acc-bar .chip { padding: 6px 14px; }
-  .train-stage > .next-bar { position: absolute; top: 10px; right: 12px; z-index: 2; margin: 0; background: var(--surface); }
+  /* o enunciado sobe para a linha do "‹ Estudar" (centralizado); ao rolar, essa linha continua à vista */
+  .train-stage { position: relative; padding: 8px 10px; gap: 2px; align-content: start; scroll-margin-top: 52px; }
+  .train-stage > .prompt { position: absolute; top: -46px; left: 50%; transform: translateX(-50%); z-index: 2; min-height: 0; max-width: 62%; justify-content: center; }
+  .train-stage > .prompt .tag { font-size: 0.85rem; padding: 4px 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  /* a pauta ocupa toda a largura do quadro (o desenho é feito já nessa proporção) */
+  .train-stage > .staff { align-items: stretch; }
+  .train-stage .staff-host { width: 100%; }
+  .train-stage .staff-host svg { width: 100%; height: auto; max-height: max(120px, calc(100dvh - 236px)); }
+  /* braço do tamanho exato da tela (sem rolagem lateral): fica mais baixo e sobra altura para a pauta */
+  .train-stage .fb-scroll .fretboard { min-width: 0; }
+  :root[data-staff='paper'] .train-stage .staff-host { padding: 6px 10px; }
+  /* ♭ ♮ ♯ e Confirmar sobem para a linha do "‹ Estudar", à direita (a pauta fica livre) */
+  .train-stage > .acc-bar { position: absolute; top: -48px; right: 10px; z-index: 2; flex-direction: row; align-items: center; gap: 4px; max-width: none; margin: 0; }
+  .train-stage > .acc-bar .chip { padding: 4px 12px; }
+  .train-stage > .acc-bar .btn-primary { padding: 5px 14px; }
+  .train-stage > .acc-bar .muted { display: none; }
+  /* deitado: o painel de retorno fica fora da tela; a caixinha e o "Próxima" ficam sobre a pauta */
+  .staff-next { display: flex; }
+}
+
+/* --- celular (em pé ou deitado): o exercício vem primeiro; título, etapas e "Encerrar" ficam embaixo dele --- */
+@media (max-width: 820px), (orientation: landscape) and (max-height: 520px) {
+  .today-run > .today-bar,
+  .today-run > .today-steps { order: 2; }
+  .page.train > .train-head { order: 2; }
+  .today-run > p { order: 2; }
+  /* leitura de frases: pauta e braço primeiro; microfone, nota inicial, nome e informações embaixo */
+  .reading > .mic-toggle { order: 2; }
+  .reading > .reading-head:not(:has(.beat-dots)) { order: 3; }
+}
+/* celular deitado, leitura de frases: braço do tamanho da tela e pauta encostada no topo */
+@media (orientation: landscape) and (max-height: 520px) {
+  .reading .fb-scroll .fretboard { min-width: 0; }
+  .reading-staff { scroll-margin-top: 4px; }
+  /* a janela que acompanha a nota da vez não passa da altura que sobra acima do braço */
+  :root[data-staff='paper'] .reading .melody-host { padding-top: 6px; padding-bottom: 6px; margin-bottom: 4px; }
+  .reading .melody-host.is-follow { max-height: calc(100dvh - 166px) !important; }
 }

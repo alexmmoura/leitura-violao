@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claves no celular</title>
+<!--
+  Só para desenvolvimento (não entra no site publicado): mostra o Claves em dois
+  celulares lado a lado, em pé e deitado, já com as mudanças ao vivo.
+  Abrir com o servidor de desenvolvimento ligado: http://localhost:5174/celular.html
+-->
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #1b1b1f; color: #ddd; font: 14px system-ui, sans-serif; }
+  header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 12px; }
+  header button { background: #2c2c33; color: #eee; border: 1px solid #444; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; }
+  header button.on { border-color: #e8a23a; color: #e8a23a; }
+  main { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; padding: 4px 12px 16px; }
+  figure { margin: 0; }
+  figcaption { margin-bottom: 4px; color: #aaa; }
+  .phone { border: 6px solid #000; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px #444; }
+  .phone iframe { border: 0; display: block; transform-origin: 0 0; background: #000; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Claves no celular</strong>
+  <button type="button" data-show="both" class="on">Os dois</button>
+  <button type="button" data-show="em-pe">Só em pé</button>
+  <button type="button" data-show="deitado">Só deitado</button>
+</header>
+<main>
+  <figure id="em-pe"><figcaption>Em pé · 412 × 915</figcaption><div class="phone"><iframe src="./" data-w="412" data-h="915" title="Claves em pé"></iframe></div></figure>
+  <figure id="deitado"><figcaption>Deitado · 915 × 412</figcaption><div class="phone"><iframe src="./" data-w="915" data-h="412" title="Claves deitado"></iframe></div></figure>
+</main>
+<script>
+  let show = 'both';
+  function fit() {
+    const avail = Math.max(200, document.documentElement.clientWidth - 24 - 12);
+    const availH = Math.max(200, window.innerHeight - 90);
+    const frames = [...document.querySelectorAll('iframe')];
+    const visible = frames.filter((f) => show === 'both' || f.closest('figure').id === show);
+    for (const f of frames) f.closest('figure').hidden = !visible.includes(f);
+    // os dois na MESMA escala (como se fosse o mesmo aparelho), lado a lado
+    const gaps = visible.length * 12 + (visible.length - 1) * 16;
+    const sumW = visible.reduce((t, f) => t + +f.dataset.w, 0);
+    const maxH = Math.max(...visible.map((f) => +f.dataset.h));
+    const s = Math.min(1, (avail - gaps) / sumW, availH / maxH);
+    for (const f of visible) {
+      const w = +f.dataset.w, h = +f.dataset.h;
+      f.style.width = w + 'px';
+      f.style.height = h + 'px';
+      f.style.transform = `scale(${s})`;
+      const box = f.parentElement;
+      box.style.width = w * s + 'px';
+      box.style.height = h * s + 'px';
+    }
+  }
+  for (const b of document.querySelectorAll('header button')) {
+    b.addEventListener('click', () => {
+      show = b.dataset.show;
+      for (const x of document.querySelectorAll('header button')) x.classList.toggle('on', x === b);
+      fit();
+    });
+  }
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>

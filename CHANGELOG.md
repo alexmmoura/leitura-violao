@@ -19,6 +19,27 @@ também é marcada no Git (etiqueta `v1.0.0` etc.), o que permite voltar exatame
 
 (nada por enquanto)
 
+## 1.8.0 — 27/11/2026
+
+Telas do celular redesenhadas para dar foco total à pauta e ao braço.
+
+- **Exercício primeiro:** em pé e deitado, a pauta e o braço ficam no topo; títulos, etapas,
+  "Encerrar", microfone, "Nota inicial", "Mostrar nome", "Ver partitura inteira" e "Cores"
+  vão para baixo do braço (nada foi tirado).
+- **Pauta maior:** o desenho se amplia conforme as notas de cada questão, sem branco
+  sobrando; o quadro tem altura fixa, então o braço não muda de lugar.
+- **Celular deitado:** a pauta ocupa toda a largura; enunciado, ♭ ♮ ♯ e Confirmar ficam
+  na linha do "‹ Estudar"; depois de responder, uma caixinha verde ✔ / vermelha ✖ e o
+  "Próxima ›" aparecem no canto da pauta; na leitura de frases, partitura e braço cabem
+  juntos na tela.
+- **Em pé:** um só botão de avançar, o "Próxima (Enter)", no meio do cabeçalho do quadro de
+  resposta (resultado à esquerda, tempo à direita).
+- **Braço sem barra de rolagem:** desliza com o dedo (e, no computador, com o mouse quando
+  não cabe na tela).
+- Títulos centralizados na tela.
+- Para quem desenvolve: `celular.html` mostra o app em dois celulares (em pé e deitado) ao
+  vivo, e `CLAUDE.md` reúne as regras do projeto.
+
 ## 1.7.2 — 27/11/2026
 
 - **App do celular avisa mais rápido quando sai versão nova:** confere a cada 3 horas

@@ -50,9 +50,12 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
   const nStrings = inst.strings.length;
   /**
    * Toque na tela (dedo/caneta): só vale ao SOLTAR sem ter arrastado. Assim, deslizar o
-   * braço para os lados não marca nota. Com o mouse, vale na hora (o tempo conta).
+   * braço para os lados não marca nota. Com o mouse, vale na hora (o tempo conta) — a não
+   * ser que o braço não caiba na tela: aí o mouse também arrasta o braço para os lados
+   * (como o dedo) e a nota vale ao soltar sem ter arrastado.
    */
-  const touch = useRef<{ loc: FretLocation; x: number; y: number; t: number; id: number } | null>(null);
+  const touch = useRef<{ loc: FretLocation; x: number; y: number; t: number; id: number; mouse?: number } | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const TAP_SLOP = 10;
   const nut = LABEL_W + OPEN_W;
   const boardLen = W - nut - 14;
@@ -85,7 +88,16 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
   };
 
   return (
-    <div className="fb-scroll">
+    <div
+      ref={scroller}
+      className="fb-scroll"
+      onPointerMove={(e) => {
+        const t = touch.current;
+        if (t?.mouse !== undefined && t.id === e.pointerId && scroller.current) scroller.current.scrollLeft = t.mouse - (e.clientX - t.x);
+      }}
+      onPointerUp={() => (touch.current = null)}
+      onPointerLeave={() => (touch.current = null)}
+    >
     <svg
       className={`fretboard${disabled ? ' is-disabled' : ''}`}
       viewBox={`0 0 ${W} ${H}`}
@@ -206,8 +218,11 @@ function Fretboard({ inst, settings, heat, window: win, marks = [], requiredStri
                   disabled
                     ? undefined
                     : (e) => {
-                        if (e.pointerType === 'mouse') return onCellClick(loc, e.timeStamp);
-                        touch.current = { loc, x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId };
+                        const sc = scroller.current;
+                        const scrollable = !!sc && sc.scrollWidth > sc.clientWidth + 1;
+                        if (e.pointerType === 'mouse' && !scrollable) return onCellClick(loc, e.timeStamp);
+                        touch.current = { loc, x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId, mouse: e.pointerType === 'mouse' ? sc!.scrollLeft : undefined };
+                        if (e.pointerType === 'mouse') e.preventDefault();
                       }
                 }
                 onPointerUp={

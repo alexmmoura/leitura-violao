@@ -408,6 +408,17 @@ export default function TrainingSession(props: Props) {
           ? 'Marque todos os locais e tecle Enter'
           : 'Encontre a nota no braço';
 
+  // resultado em uma caixinha (verde ✔ / vermelha ✖ / ≈ região errada), sem palavra
+  const badge = view ? (
+    <span
+      className={`result-badge ${view.correct ? 'is-ok' : 'is-bad'}`}
+      role="img"
+      aria-label={view.correct ? 'Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? 'Região errada' : 'Incorreto'}
+    >
+      {view.correct ? '✔' : view.error === 'OUT_OF_CONSTRAINTS' ? '≈' : '✖'}
+    </span>
+  ) : null;
+
   return (
     <section className="page train">
       <header className="train-head">
@@ -435,6 +446,18 @@ export default function TrainingSession(props: Props) {
             onRendered={onRendered}
             onPick={isStaffQ && !view ? onStaffPick : undefined}
             label={isStaffQ ? 'Pauta: clique na linha ou espaço' : 'Nota a identificar'}
+            fullRange={isStaffQ}
+            overlay={
+              view && !finished ? (
+                // só depois de responder: avança sem descer até o painel de retorno
+                <div className="staff-next">
+                  {badge}
+                  <button type="button" className="btn-primary" tabIndex={-1} onClick={next}>
+                    Próxima ›
+                  </button>
+                </div>
+              ) : undefined
+            }
           />
           {isStaffQ && !view && (
             <div className="acc-bar" role="group" aria-label="Acidente">
@@ -488,15 +511,6 @@ export default function TrainingSession(props: Props) {
               {micState.error && <span className="warn small">{micState.error}</span>}
             </div>
           )}
-          {view && !finished && (
-            // telas estreitas: o painel de retorno fica lá embaixo; aqui o resultado e o "Próxima" ficam à mão
-            <div className={`next-bar ${view.correct ? 'is-ok' : 'is-bad'}`} aria-hidden>
-              <span className="next-bar-title">{view.correct ? '✔ Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? '≈ Região errada' : '✖ Incorreto'}</span>
-              <button type="button" className="btn-primary" tabIndex={-1} onClick={next}>
-                Próxima ›
-              </button>
-            </div>
-          )}
           <p className="kbd-hint">
             {isStaffQ ? (
               <>
@@ -522,10 +536,18 @@ export default function TrainingSession(props: Props) {
             {!view && <p className="muted">{isStaffQ ? 'Responda na pauta.' : 'Responda no braço.'}</p>}
             {view && (
               <>
-                <p className="feedback-title">
-                  {view.correct ? 'Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? 'Nota certa, região errada' : 'Incorreto'}
+                {/* cabeçalho simétrico: resultado à esquerda, "Próxima" no meio (à mão), tempo à direita */}
+                <div className="feedback-title">
+                  <span className="feedback-result">
+                    {view.correct ? 'Correto' : view.error === 'OUT_OF_CONSTRAINTS' ? 'Nota certa, região errada' : 'Incorreto'}
+                  </span>
+                  {!finished && (
+                    <button type="button" className="btn-primary" onClick={next}>
+                      Próxima (Enter)
+                    </button>
+                  )}
                   <span className="rt">{secs(view.rtMs)}</span>
-                </p>
+                </div>
                 {view.error && view.error !== 'OUT_OF_CONSTRAINTS' && view.error !== 'OTHER' && <p className="err-code">{ERROR_LABEL[view.error]}</p>}
                 <dl className="explain">
                   {view.explanation.map((l, i) => {
@@ -539,11 +561,6 @@ export default function TrainingSession(props: Props) {
                     );
                   })}
                 </dl>
-                {!finished && (
-                  <button type="button" className="btn-primary" onClick={next}>
-                    Próxima (Enter)
-                  </button>
-                )}
               </>
             )}
           </div>
